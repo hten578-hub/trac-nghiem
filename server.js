@@ -192,9 +192,27 @@ app.get('/api/student/history', requireStudentAuth, (req, res) => {
   const db = readDB();
   const history = db.results
     .filter(r => r.student_username === req.studentUsername)
-    .map(({ id, subject_id, subject_title, score, total, submitted_at, attempt }) =>
-      ({ id, subject_id, subject_title, score, total, submitted_at, attempt })
-    ).reverse();
+    .map(r => {
+      const subj = subjects[r.subject_id];
+      let wrong = 0, skip = 0;
+      if (subj && r.answers) {
+        r.answers.forEach((ans, i) => {
+          if (ans === -1) skip++;
+          else if (ans !== subj.questions[i]?.answer) wrong++;
+        });
+      }
+      return {
+        id: r.id,
+        subject_id: r.subject_id,
+        subject_title: r.subject_title,
+        score: r.score,
+        total: r.total,
+        wrong,
+        skip,
+        attempt: r.attempt,
+        submitted_at: r.submitted_at
+      };
+    }).reverse();
   res.json(history);
 });
 
