@@ -59,14 +59,49 @@ fs.readdirSync(SUBJECTS_DIR)
 // ===== DB helpers =====
 function readDB() {
   if (!fs.existsSync(DB_FILE))
-    fs.writeFileSync(DB_FILE, JSON.stringify({ results: [], nextId: 1 }));
-  return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    fs.writeFileSync(DB_FILE, JSON.stringify({ results: [], nextId: 1, students: {} }));
+  const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+  if (!db.students) db.students = {};
+  return db;
 }
 function writeDB(data) {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
-// ===== AUTH APIs =====
+const MAX_ATTEMPTS = 3; // Giới hạn số lần làm bài
+
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(String(password)).digest('hex');
+}
+
+function verifyStudentPassword(student, password) {
+  if (!student) return false;
+  if (student.passwordHash) return student.passwordHash === hashPassword(password);
+  return student.password === password;
+}
+
+// ===== Student session =====
+const studentSessions = new Map();
+
+function createStudentSession(username) {
+  const token = crypto.randomBytes(32).toString('hex');
+  studentSessions.set(token, { username, createdAt: Date.now() });
+  return token;
+}
+function getStudentFromToken(token) {
+  if (!token || !studentSessions.has(token)) return null;
+  const s = studentSessions.get(token);
+  if (Date.now() - s.createdAt > SESSION_TTL_MS) { studentSessions.delete(token); return null; }
+  return s.username;
+}
+function requireStudentAuth(req, res, next) {
+  const username = getStudentFromToken(req.headers['x-student-token']);
+  if (!username) return res.status(401).json({ error: 'Chưa đăng nhập.' });
+  req.studentUsername = username;
+  next();
+}
+
+// ===== AUTH APIs (Giáo viên) =====
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   if (username === TEACHER_USERNAME && password === TEACHER_PASSWORD)
@@ -79,6 +114,88 @@ app.post('/api/logout', (req, res) => {
 });
 app.get('/api/auth-check', (req, res) => {
   res.json({ ok: isValidSession(req.headers['x-auth-token']) });
+});
+
+// ===== AUTH APIs (Học sinh) =====
+// Đăng ký tài khoản học sinh (giáo viên tạo)
+app.post('/api/students', requireAuth, (req, res) => {
+  const { username, password, fullname } = req.body;
+  if (!username || !password || !fullname)
+    return res.status(400).json({ error: 'Thiếu thông tin.' });
+  const db = readDB();
+  if (db.students[username])
+    return res.status(400).json({ error: 'Tên đăng nhập đã tồn tại.' });
+  db.students[username] = { passwordHash: hashPassword(password), fullname, createdAt: new Date().toISOString() };
+  writeDB(db);
+  res.json({ ok: true });
+});
+
+// Lấy danh sách học sinh (giáo viên)
+app.get('/api/students', requireAuth, (req, res) => {
+  const db = readDB();
+  const list = Object.entries(db.students).map(([username, s]) => ({
+    username, fullname: s.fullname, createdAt: s.createdAt
+  }));
+  res.json(list);
+});
+
+// Xóa học sinh (giáo viên)
+app.delete('/api/students/:username', requireAuth, (req, res) => {
+  const db = readDB();
+  delete db.students[req.params.username];
+  writeDB(db);
+  res.json({ ok: true });
+});
+
+// Đăng nhập học sinh
+app.post('/api/student-login', (req, res) => {
+  const { username, password } = req.body;
+  const db = readDB();
+  const student = db.students[username];
+  if (!verifyStudentPassword(student, password))
+    return res.status(401).json({ error: 'Sai tên đăng nhập hoặc mật khẩu.' });
+  if (!student.passwordHash) {
+    student.passwordHash = hashPassword(password);
+    delete student.password;
+    writeDB(db);
+  }
+  const token = createStudentSession(username);
+  res.json({ token, fullname: student.fullname, username });
+});
+
+// Kiểm tra session học sinh
+app.get('/api/student-auth-check', (req, res) => {
+  const username = getStudentFromToken(req.headers['x-student-token']);
+  if (!username) return res.json({ ok: false });
+  const db = readDB();
+  const student = db.students[username];
+  res.json({ ok: true, username, fullname: student?.fullname || username });
+});
+
+// Đăng xuất học sinh
+app.post('/api/student-logout', (req, res) => {
+  studentSessions.delete(req.headers['x-student-token']);
+  res.json({ ok: true });
+});
+
+// Kiểm tra số lần làm bài còn lại
+app.get('/api/student/attempts/:subjectId', requireStudentAuth, (req, res) => {
+  const db = readDB();
+  const used = db.results.filter(r =>
+    r.student_username === req.studentUsername && r.subject_id === req.params.subjectId
+  ).length;
+  res.json({ used, max: MAX_ATTEMPTS, remaining: Math.max(0, MAX_ATTEMPTS - used) });
+});
+
+// Lịch sử làm bài của học sinh
+app.get('/api/student/history', requireStudentAuth, (req, res) => {
+  const db = readDB();
+  const history = db.results
+    .filter(r => r.student_username === req.studentUsername)
+    .map(({ id, subject_id, subject_title, score, total, submitted_at, attempt }) =>
+      ({ id, subject_id, subject_title, score, total, submitted_at, attempt })
+    ).reverse();
+  res.json(history);
 });
 
 // ===== API: Danh sách đề =====
@@ -137,12 +254,24 @@ app.post('/api/subjects/:id/check', (req, res) => {
 });
 
 // ===== API: Nộp bài =====
-app.post('/api/subjects/:id/submit', (req, res) => {
+app.post('/api/subjects/:id/submit', requireStudentAuth, (req, res) => {
   const subject = subjects[req.params.id];
   if (!subject) return res.status(404).json({ error: 'Không tìm thấy đề.' });
 
-  const { student_name, answers } = req.body;
-  if (!student_name?.trim()) return res.status(400).json({ error: 'Tên học sinh không được để trống.' });
+  const { answers } = req.body;
+  const username = req.studentUsername;
+  const db = readDB();
+
+  // Kiểm tra giới hạn
+  const used = db.results.filter(r =>
+    r.student_username === username && r.subject_id === req.params.id
+  ).length;
+  if (used >= MAX_ATTEMPTS)
+    return res.status(403).json({ error: `Bạn đã dùng hết ${MAX_ATTEMPTS} lần làm bài cho đề này.` });
+
+  const student = db.students[username];
+  const student_name = student?.fullname || username;
+
   if (!Array.isArray(answers) || answers.length !== subject.questions.length)
     return res.status(400).json({ error: 'Dữ liệu câu trả lời không hợp lệ.' });
 
@@ -155,19 +284,23 @@ app.post('/api/subjects/:id/submit', (req, res) => {
       explain: isCorrect ? (q.explain || null) : null };
   });
 
-  const db = readDB();
   const record = {
     id: db.nextId++,
     subject_id: req.params.id,
     subject_title: subject.meta.title,
-    student_name: student_name.trim(),
+    student_username: username,
+    student_name,
     score, total: subject.questions.length,
-    answers, submitted_at: new Date().toISOString()
+    answers, submitted_at: new Date().toISOString(),
+    attempt: used + 1
   };
   db.results.push(record);
   writeDB(db);
 
-  res.json({ id: record.id, student_name: record.student_name, score, total: record.total, detailed });
+  res.json({
+    id: record.id, student_name, score, total: record.total, detailed,
+    attempt: record.attempt, remaining: MAX_ATTEMPTS - record.attempt
+  });
 });
 
 // ===== API: Kết quả (giáo viên) =====
@@ -176,8 +309,8 @@ app.get('/api/results', requireAuth, (req, res) => {
   const { subject } = req.query;
   let rows = db.results;
   if (subject) rows = rows.filter(r => r.subject_id === subject);
-  res.json(rows.map(({ id, subject_id, subject_title, student_name, score, total, submitted_at }) =>
-    ({ id, subject_id, subject_title, student_name, score, total, submitted_at })
+  res.json(rows.map(({ id, subject_id, subject_title, student_name, student_username, score, total, submitted_at, attempt }) =>
+    ({ id, subject_id, subject_title, student_name, student_username, score, total, submitted_at, attempt })
   ).reverse());
 });
 

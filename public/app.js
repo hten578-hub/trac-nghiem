@@ -428,8 +428,11 @@ function renderResult(data) {
   const wrong = detailed.filter(d => !d.isCorrect && d.selected !== -1).length;
   const skip = detailed.filter(d => d.selected === -1).length;
 
-  document.getElementById('sc-num').textContent = score;
-  document.getElementById('sc-denom').textContent = `/${total}`;
+  // Quy về thang 10
+  const score10 = Math.round((score / total) * 10 * 10) / 10;
+
+  document.getElementById('sc-num').textContent = score10;
+  document.getElementById('sc-denom').textContent = `/10`;
   document.getElementById('sc-name').textContent = student_name;
   document.getElementById('sc-correct').textContent = `${score} đúng`;
   document.getElementById('sc-wrong').textContent = `${wrong} sai`;

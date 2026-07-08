@@ -36,9 +36,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   subjectId = params.get('subject');
   if (!subjectId) { window.location.href = 'index.html'; return; }
 
-  // Đọc tên từ sessionStorage (set bởi index.html)
-  studentName = sessionStorage.getItem('student_name') || '';
-  if (!studentName) { window.location.href = 'index.html'; return; }
+  // Đọc thông tin học sinh từ localStorage (đã đăng nhập)
+  studentName = localStorage.getItem('student_fullname') || sessionStorage.getItem('student_name') || 'Học sinh';
+  const token = localStorage.getItem('student_token');
+  if (!token) { location.href = 'student-login.html'; return; }
+
+  try {
+    const authRes = await fetch('/api/student-auth-check', { headers: { 'x-student-token': token } });
+    const auth = await authRes.json();
+    if (!auth.ok) {
+      localStorage.removeItem('student_token');
+      localStorage.removeItem('student_username');
+      localStorage.removeItem('student_fullname');
+      location.href = 'student-login.html';
+      return;
+    }
+    studentName = auth.fullname || studentName;
+    localStorage.setItem('student_fullname', studentName);
+  } catch {
+    location.href = 'student-login.html';
+    return;
+  }
 
   // Load câu hỏi
   try {
@@ -53,6 +71,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = 'index.html';
     return;
   }
+
+  // Kiểm tra số lần làm còn lại
+  try {
+    const ar = await fetch(`/api/student/attempts/${subjectId}`, { headers: { 'x-student-token': token } });
+    if (ar.status === 401) { location.href = 'student-login.html'; return; }
+    const att = await ar.json();
+    if (att.remaining <= 0) {
+      document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f0f5ff;font-family:sans-serif;">
+        <div style="background:#fff;border-radius:16px;padding:40px;text-align:center;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.1);">
+          <div style="font-size:52px;margin-bottom:16px;">🚫</div>
+          <h2 style="margin-bottom:10px;">Đã hết lượt làm bài</h2>
+          <p style="color:#8c8c8c;margin-bottom:24px;">Bạn đã sử dụng hết ${att.max} lần làm bài cho đề này.</p>
+          <a href="index.html" style="display:inline-block;background:#1890ff;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:700;">← Về trang chủ</a>
+        </div>
+      </div>`;
+      return;
+    }
+    // Hiện số lần còn lại
+    if (att.remaining <= att.max) {
+      const notice = document.createElement('div');
+      notice.style.cssText = 'background:#fffbe6;border-bottom:1px solid #ffe58f;padding:7px 20px;font-size:.82rem;color:#614700;text-align:center;';
+      notice.textContent = `⚠️ Bạn còn ${att.remaining}/${att.max} lần làm bài cho đề này.`;
+      document.querySelector('.qz-header').after(notice);
+    }
+  } catch {}
 
   // Cập nhật header
   document.title = subjectMeta.title + ' — Trắc nghiệm';
@@ -319,10 +362,11 @@ function closeModal() { document.getElementById('modal').classList.remove('open'
 async function submitQuiz() {
   closeModal(); stopTimer(); clearProgress();
   try {
+    const token = localStorage.getItem('student_token') || '';
     const res = await fetch(`/api/subjects/${subjectId}/submit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ student_name: studentName, answers })
+      headers: { 'Content-Type': 'application/json', 'x-student-token': token },
+      body: JSON.stringify({ answers })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
@@ -338,8 +382,11 @@ function renderResult(data) {
   const wrong = detailed.filter(d => !d.isCorrect && d.selected !== -1).length;
   const skip = detailed.filter(d => d.selected === -1).length;
 
-  document.getElementById('sc-num').textContent = score;
-  document.getElementById('sc-denom').textContent = `/${total}`;
+  // Quy về thang 10
+  const score10 = Math.round((score / total) * 10 * 10) / 10; // 1 chữ số thập phân
+
+  document.getElementById('sc-num').textContent = score10;
+  document.getElementById('sc-denom').textContent = `/10`;
   document.getElementById('sc-name').textContent = student_name;
   document.getElementById('sc-correct').textContent = `${score} đúng`;
   document.getElementById('sc-wrong').textContent = `${wrong} sai`;
@@ -394,8 +441,20 @@ function renderResult(data) {
 // ===== RETAKE =====
 function confirmRetake() { document.getElementById('modal-retake').classList.add('open'); }
 function closeRetakeModal() { document.getElementById('modal-retake').classList.remove('open'); }
-function retake() {
-  closeRetakeModal(); stopTimer(); clearProgress();
+async function retake() {
+  closeRetakeModal();
+  const token = localStorage.getItem('student_token') || '';
+  try {
+    const ar = await fetch(`/api/student/attempts/${subjectId}`, { headers: { 'x-student-token': token } });
+    if (ar.status === 401) { location.href = 'student-login.html'; return; }
+    const att = await ar.json();
+    if (att.remaining <= 0) {
+      alert(`Bạn đã dùng hết ${att.max} lần làm bài cho đề này.`);
+      location.href = 'index.html';
+      return;
+    }
+  } catch {}
+  stopTimer(); clearProgress();
   current = 0; answers = new Array(questions.length).fill(-1);
   timeLeft = (subjectMeta.timeLimit || 60) * 60;
   buildNumGrid(); renderQuestion(); startTimer();

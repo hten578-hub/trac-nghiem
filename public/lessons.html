@@ -65,13 +65,33 @@
 <script>
 const params = new URLSearchParams(window.location.search);
 const groupId = params.get('group');
-const studentName = sessionStorage.getItem('student_name');
+let studentToken = localStorage.getItem('student_token') || '';
+let studentName = localStorage.getItem('student_fullname') || '';
 
-if (!groupId || !studentName) window.location.href = 'index.html';
+if (!groupId) window.location.href = 'index.html';
 
-// Hiển thị tên học sinh
-document.getElementById('av-name').textContent = studentName;
-document.getElementById('av-letter').textContent = studentName.trim().split(' ').pop()[0].toUpperCase();
+function esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function checkAuth() {
+  if (!studentToken) { location.href = 'student-login.html'; return false; }
+  const res = await fetch('/api/student-auth-check', { headers: { 'x-student-token': studentToken } });
+  const data = await res.json();
+  if (!data.ok) {
+    localStorage.removeItem('student_token');
+    localStorage.removeItem('student_username');
+    localStorage.removeItem('student_fullname');
+    location.href = 'student-login.html';
+    return false;
+  }
+  studentName = data.fullname;
+  localStorage.setItem('student_fullname', data.fullname);
+  localStorage.setItem('student_username', data.username);
+  document.getElementById('av-name').textContent = studentName;
+  document.getElementById('av-letter').textContent = studentName.trim().split(' ').pop()[0].toUpperCase();
+  return true;
+}
 
 async function loadLessons() {
   try {
@@ -114,7 +134,64 @@ function goToLesson(subjectId) {
   window.location.href = `quiz.html?subject=${subjectId}`;
 }
 
-loadLessons();
+loadLessons = async function() {
+  try {
+    const res = await fetch('/api/groups');
+    const groups = await res.json();
+    const group = groups.find(g => g.id === groupId);
+    if (!group) { window.location.href = 'index.html'; return; }
+
+    document.title = group.title + ' - Danh sách bài';
+    document.getElementById('header-title').textContent = group.title;
+    document.getElementById('group-icon').textContent = group.icon;
+    document.getElementById('group-title').textContent = group.title;
+    document.getElementById('group-sub').textContent = `${group.grade} - ${group.lessons.length} bài`;
+
+    const list = document.getElementById('lessons-list');
+    if (!group.lessons.length) {
+      list.innerHTML = '<div class="loading-state">Chưa có bài nào.</div>';
+      return;
+    }
+
+    const attempts = await Promise.all(group.lessons.map(async lesson => {
+      try {
+        const r = await fetch(`/api/student/attempts/${lesson.id}`, { headers: { 'x-student-token': studentToken } });
+        if (!r.ok) throw new Error();
+        return await r.json();
+      } catch {
+        return { used: 0, max: 3, remaining: 3 };
+      }
+    }));
+
+    list.innerHTML = group.lessons.map((lesson, i) => {
+      const att = attempts[i];
+      const locked = att.remaining <= 0;
+      const statusText = locked ? `Hết ${att.max} lượt` : `Còn ${att.remaining}/${att.max} lượt`;
+      const statusStyle = locked ? 'background:#fff2f0;color:#ff4d4f;' : 'background:#f6ffed;color:#52c41a;';
+      return `
+        <div class="lesson-card" onclick="${locked ? '' : `goToLesson('${lesson.id}')`}" style="${locked ? 'opacity:.65;cursor:not-allowed;' : ''}">
+          <div class="lesson-num">${i + 1}</div>
+          <div class="lesson-info">
+            <div class="lesson-title">${esc(lesson.title)}</div>
+            <div class="lesson-sub">${esc(lesson.subtitle)}</div>
+            <div class="lesson-meta">
+              <span class="lesson-tag blue">${lesson.totalQuestions} câu</span>
+              <span class="lesson-tag">${lesson.timeLimit} phút</span>
+              <span class="lesson-tag" style="${statusStyle}">${statusText}</span>
+            </div>
+          </div>
+          <div class="lesson-arrow">${locked ? '!' : '>'}</div>
+        </div>
+      `;
+    }).join('');
+  } catch {
+    document.getElementById('lessons-list').innerHTML = '<div class="loading-state">Không thể kết nối server</div>';
+  }
+};
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (await checkAuth()) loadLessons();
+});
 </script>
 </body>
 </html>

@@ -79,6 +79,36 @@
       </div>
     </div>
 
+    <!-- Quản lý tài khoản học sinh -->
+    <div class="t-table-card" style="margin-top:20px;">
+      <div class="t-table-header">
+        <h2>👤 Tài khoản học sinh</h2>
+        <button class="btn btn-ghost" onclick="document.getElementById('add-student-form').style.display='block'" style="height:34px;padding:0 14px;font-size:.85rem;">+ Thêm học sinh</button>
+      </div>
+      <div id="add-student-form" style="display:none;padding:16px 20px;border-bottom:1px solid var(--gray-4);background:var(--gray-2);">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div>
+            <label style="display:block;font-size:.78rem;font-weight:600;color:var(--gray-7);margin-bottom:4px;">Họ tên</label>
+            <input type="text" id="new-fullname" placeholder="Nguyễn Văn An" style="height:36px;padding:0 10px;border:1px solid var(--gray-5);border-radius:6px;font-size:.88rem;width:180px;outline:none;"/>
+          </div>
+          <div>
+            <label style="display:block;font-size:.78rem;font-weight:600;color:var(--gray-7);margin-bottom:4px;">Tên đăng nhập</label>
+            <input type="text" id="new-username" placeholder="nguyenvanan" style="height:36px;padding:0 10px;border:1px solid var(--gray-5);border-radius:6px;font-size:.88rem;width:150px;outline:none;"/>
+          </div>
+          <div>
+            <label style="display:block;font-size:.78rem;font-weight:600;color:var(--gray-7);margin-bottom:4px;">Mật khẩu</label>
+            <input type="text" id="new-password" placeholder="123456" style="height:36px;padding:0 10px;border:1px solid var(--gray-5);border-radius:6px;font-size:.88rem;width:120px;outline:none;"/>
+          </div>
+          <button onclick="addStudent()" style="height:36px;padding:0 16px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-size:.85rem;font-weight:700;cursor:pointer;">Thêm</button>
+          <button onclick="document.getElementById('add-student-form').style.display='none'" style="height:36px;padding:0 12px;background:none;border:1px solid var(--gray-5);border-radius:6px;font-size:.85rem;cursor:pointer;color:var(--gray-7);">Hủy</button>
+        </div>
+        <div id="add-student-msg" style="margin-top:8px;font-size:.82rem;"></div>
+      </div>
+      <div id="students-list">
+        <div class="t-empty"><div class="t-empty-icon">⏳</div><div class="t-empty-text">Đang tải...</div></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -167,6 +197,7 @@ function showTeacherPage() {
   document.getElementById('login-screen').classList.remove('active');
   document.getElementById('teacher-page').style.display = 'flex';
   loadResults();
+  loadStudents();
   refreshTimer = setInterval(loadResults, 15000);
 }
 
@@ -217,6 +248,8 @@ function renderTable(data) {
     return `<tr>
       <td style="color:var(--gray-6);font-size:0.82rem;">${i+1}</td>
       <td><strong>${esc(r.student_name)}</strong></td>
+      <td style="color:var(--gray-7);font-size:0.82rem;">${esc(r.subject_title || 'De cu')}</td>
+      <td style="color:var(--gray-7);font-size:0.82rem;">${r.attempt || '-'}</td>
       <td><span class="t-score-pill ${cls}">${r.score} / ${r.total}</span></td>
       <td>${rank} ${pct}%</td>
       <td style="color:var(--gray-7);font-size:0.82rem;">${date}</td>
@@ -234,9 +267,76 @@ async function clearResults() {
   loadResults();
 }
 
+async function addStudent() {
+  const fullname = document.getElementById('new-fullname').value.trim();
+  const username = document.getElementById('new-username').value.trim();
+  const password = document.getElementById('new-password').value.trim();
+  const msg = document.getElementById('add-student-msg');
+  if (!fullname || !username || !password) { msg.style.color='#ff4d4f'; msg.textContent='Vui lòng điền đầy đủ.'; return; }
+  const res = await fetch('/api/students', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-auth-token': getToken() },
+    body: JSON.stringify({ fullname, username, password })
+  });
+  const data = await res.json();
+  if (!res.ok) { msg.style.color='#ff4d4f'; msg.textContent=data.error; }
+  else { msg.style.color='#52c41a'; msg.textContent='✓ Đã thêm thành công!';
+    document.getElementById('new-fullname').value='';
+    document.getElementById('new-username').value='';
+    document.getElementById('new-password').value='';
+    loadStudents();
+  }
+}
+
+async function loadStudents() {
+  const res = await fetch('/api/students', { headers: { 'x-auth-token': getToken() } });
+  const students = await res.json();
+  const wrap = document.getElementById('students-list');
+  if (!students.length) { wrap.innerHTML='<div class="t-empty"><div class="t-empty-text">Chưa có học sinh nào.</div></div>'; return; }
+  const rows = students.map((s,i) => `<tr>
+    <td style="color:var(--gray-6);font-size:.82rem;">${i+1}</td>
+    <td><strong>${esc(s.fullname)}</strong></td>
+    <td style="color:var(--gray-7);font-size:.85rem;">${esc(s.username)}</td>
+    <td style="color:var(--gray-7);font-size:.82rem;">${new Date(s.createdAt).toLocaleDateString('vi-VN')}</td>
+    <td><button onclick="deleteStudent('${esc(s.username)}')" style="background:none;border:1px solid #ffa39e;color:#ff4d4f;border-radius:4px;padding:2px 8px;font-size:.75rem;cursor:pointer;">Xóa</button></td>
+  </tr>`).join('');
+  wrap.innerHTML=`<table><thead><tr><th>#</th><th>Họ tên</th><th>Tên đăng nhập</th><th>Ngày tạo</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+async function deleteStudent(username) {
+  if (!confirm(`Xóa học sinh "${username}"?`)) return;
+  await fetch(`/api/students/${username}`, { method: 'DELETE', headers: { 'x-auth-token': getToken() } });
+  loadStudents();
+}
+
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // Enter để đăng nhập
+renderTable = function(data) {
+  const wrap = document.getElementById('table-wrap');
+  if (!data.length) {
+    wrap.innerHTML = '<div class="t-empty"><div class="t-empty-text">Chua co hoc sinh nao nop bai</div></div>';
+    return;
+  }
+  const rows = data.map((r, i) => {
+    const pct = Math.round(r.score / r.total * 100);
+    const cls = pct >= 80 ? 'pill-high' : pct >= 50 ? 'pill-mid' : 'pill-low';
+    const date = new Date(r.submitted_at).toLocaleString('vi-VN');
+    return `<tr>
+      <td style="color:var(--gray-6);font-size:0.82rem;">${i + 1}</td>
+      <td><strong>${esc(r.student_name || '')}</strong></td>
+      <td style="color:var(--gray-7);font-size:0.82rem;">${esc(r.subject_title || 'De cu')}</td>
+      <td style="color:var(--gray-7);font-size:0.82rem;">${r.attempt || '-'}</td>
+      <td><span class="t-score-pill ${cls}">${r.score} / ${r.total}</span></td>
+      <td>${pct}%</td>
+      <td style="color:var(--gray-7);font-size:0.82rem;">${date}</td>
+    </tr>`;
+  }).join('');
+  wrap.innerHTML = `<table>
+    <thead><tr><th>#</th><th>Hoc sinh</th><th>De</th><th>Lan</th><th>Diem</th><th>Ket qua</th><th>Thoi gian nop</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+};
+
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && document.getElementById('login-screen').classList.contains('active')) {
     doLogin();
