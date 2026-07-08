@@ -1,21 +1,17 @@
 # 🎓 Hệ thống Trắc Nghiệm Online
 
-Web trắc nghiệm cho học sinh, có trang giáo viên xem kết quả. Hỗ trợ nhiều môn/đề khác nhau.
+Web trắc nghiệm cho học sinh, có đăng nhập, giới hạn lượt làm bài, lịch sử điểm và trang giáo viên quản lý.
 
 ---
 
-## 🚀 Khởi động
+## 🚀 Khởi động (local)
 
-### Lần đầu cài đặt
 ```
 npm install
-```
-
-### Chạy server
-```
 node server.js
 ```
-Hoặc nếu `node` chưa có trong PATH:
+
+Nếu `node` chưa có trong PATH:
 ```
 "C:\Program Files\nodejs\node.exe" server.js
 ```
@@ -26,10 +22,11 @@ Hoặc nếu `node` chưa có trong PATH:
 
 | URL | Mô tả |
 |-----|-------|
-| `http://localhost:3000` | Trang chọn đề (học sinh nhập tên + chọn môn) |
-| `http://localhost:3000/quiz.html?subject=toan-lop5` | Làm bài Toán Lớp 5 |
-| `http://localhost:3000/quiz.html?subject=van-lop5` | Làm bài Tiếng Việt Lớp 5 |
-| `http://localhost:3000/teacher.html` | Trang giáo viên (cần đăng nhập) |
+| `/` | Trang chọn môn (yêu cầu đăng nhập học sinh) |
+| `/student-login.html` | Đăng nhập học sinh |
+| `/lessons.html?group=toan-lop5` | Danh sách bài của môn |
+| `/quiz.html?subject=hon-so-lop5` | Làm bài |
+| `/teacher.html` | Trang giáo viên (đăng nhập riêng) |
 
 ---
 
@@ -40,63 +37,66 @@ Hoặc nếu `node` chưa có trong PATH:
 | **Username** | `giaovien` |
 | **Password** | `toan123` |
 
-Để đổi mật khẩu: mở `server.js`, sửa 2 dòng đầu:
-```js
-const TEACHER_USERNAME = 'giaovien';
-const TEACHER_PASSWORD = 'toan123';
-```
-Sau đó restart server.
+Để đổi: mở `server.js`, sửa 2 dòng đầu `TEACHER_USERNAME` / `TEACHER_PASSWORD`, restart server.
+
+---
+
+## � Quản lý học sinh
+
+Vào `teacher.html` → đăng nhập → cuộn xuống phần **"Tài khoản học sinh"**:
+- **Thêm học sinh**: điền Họ tên + Tên đăng nhập + Mật khẩu → bấm Thêm
+- **Xóa học sinh**: bấm nút Xóa cạnh tên
+- Học sinh dùng tài khoản này để đăng nhập tại `/student-login.html`
+
+---
+
+## 🔒 Giới hạn lượt làm bài
+
+- Mỗi học sinh được làm **tối đa 3 lần/đề**
+- Trang danh sách bài hiện số lượt còn lại (3/3, 2/3...)
+- Hết lượt → bài bị khóa, hiện thông báo
+- Muốn đổi số lần: mở `server.js`, sửa dòng `const MAX_ATTEMPTS = 3`
+
+---
+
+## 📋 Lịch sử làm bài
+
+- Học sinh bấm **📋 Lịch sử** ở header trang chủ
+- Hiện tất cả các lần đã nộp: môn, ngày giờ, điểm /10
 
 ---
 
 ## 📚 Thêm đề mới
 
-Tất cả đề nằm trong thư mục `subjects/`. Server tự động load tất cả file `.js` trong đó.
+Tạo file trong `subjects/`, ví dụ `subjects/khoa-hoc-lop5.js`:
 
-### Bước 1 — Tạo file đề mới
-Copy file mẫu `subjects/van-lop5.js` và đổi tên, ví dụ `subjects/khoa-hoc-lop5.js`.
-
-### Bước 2 — Điền thông tin đề
 ```js
 module.exports = {
   meta: {
-    id: 'khoa-hoc-lop5',      // ID duy nhất, không dấu, không cách
-    title: 'Khoa Học Lớp 5',  // Tên hiển thị
+    id: 'khoa-hoc-lop5',
+    title: 'Khoa Học',
     subtitle: 'Tự nhiên và xã hội',
-    icon: '🔬',               // Emoji icon
-    timeLimit: 45,            // Thời gian làm bài (phút)
+    icon: '🔬',
+    timeLimit: 45,          // phút
     subject: 'Khoa Học',
     grade: 'Lớp 5',
+    group_id: 'khoahoc-lop5',
+    group_title: 'Khoa Học Lớp 5',
+    group_icon: '🔬',
   },
   questions: [
     {
       id: 1,
-      question: "Nội dung câu hỏi?",
-      options: ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
-      answer: 0,        // 0=A, 1=B, 2=C, 3=D
-      explain: "Giải thích khi đúng (không bắt buộc)"
+      question: "Câu hỏi?",
+      options: ["A", "B", "C", "D"],
+      answer: 0,            // 0=A, 1=B, 2=C, 3=D
+      explain: "Giải thích (chỉ hiện khi đúng)"
     },
-    // thêm câu tiếp theo...
   ]
 };
 ```
 
-### Bước 3 — Restart server
-```
-node server.js
-```
-Đề mới sẽ tự hiện trên trang chọn đề.
-
----
-
-## ✏️ Sửa câu hỏi
-
-Mở file trong `subjects/` tương ứng, sửa trực tiếp rồi restart server.
-
-Hỗ trợ công thức toán LaTeX: dùng `$...$`
-```
-"Kết quả của $\\frac{3}{5} + \\frac{2}{7}$ là:"
-```
+Restart server → đề tự hiện trên trang chủ.
 
 ---
 
@@ -104,32 +104,50 @@ Hỗ trợ công thức toán LaTeX: dùng `$...$`
 
 ```
 WEB TOAN 4/
-├── server.js           ← Backend (Express + auth + API)
+├── server.js              ← Backend (Express + auth + API)
 ├── package.json
-├── questions.js        ← (cũ, không dùng nữa)
-├── data.json           ← Database kết quả (tự tạo khi chạy)
-├── subjects/           ← THƯ MỤC ĐỀ THI
-│   ├── toan-lop5.js    ← Đề Toán Lớp 5
-│   └── van-lop5.js     ← Đề Tiếng Việt Lớp 5
+├── data.json              ← Database kết quả + tài khoản học sinh
+├── subjects/
+│   ├── toan-lop5.js       ← Đề Toán Lớp 5 (Hỗn số)
+│   └── van-lop5.js        ← Đề Tiếng Việt Lớp 5 (Đại từ)
 └── public/
-    ├── index.html      ← Trang chọn đề
-    ├── quiz.html       ← Trang làm bài (dùng chung mọi đề)
-    ├── quiz.js         ← Logic làm bài
-    ├── teacher.html    ← Trang giáo viên
-    ├── effects.js      ← Hiệu ứng âm thanh, confetti, emoji
-    └── style.css       ← Giao diện
+    ├── index.html         ← Trang chọn môn
+    ├── student-login.html ← Đăng nhập học sinh
+    ├── lessons.html       ← Danh sách bài của môn
+    ├── quiz.html          ← Trang làm bài (dùng chung)
+    ├── quiz.js            ← Logic làm bài
+    ├── teacher.html       ← Trang giáo viên
+    ├── effects.js         ← Hiệu ứng âm thanh, confetti, emoji
+    └── style.css          ← Giao diện
 ```
 
 ---
 
 ## ⚡ Tính năng
 
-- ✅ Nhiều đề thi, nhiều môn — thêm thoải mái
+- ✅ Đăng nhập học sinh — tài khoản do giáo viên tạo
+- ✅ Giới hạn 3 lần làm bài/đề
+- ✅ Lịch sử điểm — học sinh xem lại các lần đã làm
+- ✅ Nhiều môn, nhiều đề — thêm thoải mái
 - ✅ Đồng hồ đếm ngược, tự nộp khi hết giờ
-- ✅ Nút **Kiểm tra** — xem đúng/sai từng câu ngay lập tức
+- ✅ Nút Kiểm tra — xem đúng/sai từng câu ngay lập tức
 - ✅ Giải thích đáp án khi chọn đúng
 - ✅ Lưu tiến độ — tắt máy vẫn làm tiếp được
-- ✅ Phím tắt: `1/2/3/4` chọn đáp án, `→` câu tiếp, `Esc` bỏ qua
-- ✅ Hiệu ứng confetti, emoji, âm thanh khi nộp bài
-- ✅ Trang giáo viên: thống kê, bảng điểm, đăng nhập bảo mật
-- ✅ Responsive — dùng được trên điện thoại và laptop
+- ✅ Phím tắt 1/2/3/4, →, Esc
+- ✅ Hiệu ứng confetti, emoji, âm thanh
+- ✅ Trang giáo viên: thống kê, bảng điểm, quản lý học sinh
+- ✅ Responsive — điện thoại và laptop
+
+---
+
+## 🚢 Deploy lên Railway (24/7)
+
+Sau khi sửa code, push lên GitHub để Railway tự deploy:
+
+```
+git add .
+git commit -m "mô tả thay đổi"
+git push
+```
+
+Railway tự deploy lại trong ~2 phút. Link không đổi.
