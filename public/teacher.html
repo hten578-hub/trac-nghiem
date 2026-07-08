@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Trang Giáo Viên – Trắc Nghiệm Toán Lớp 5</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ========== MÀN HÌNH ĐĂNG NHẬP ========== -->
+<div class="login-overlay active" id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">👩‍🏫</div>
+    <h2>Đăng nhập Giáo Viên</h2>
+    <p class="login-sub">Chỉ giáo viên mới được truy cập trang này</p>
+
+    <div class="login-error" id="login-error">Sai tên đăng nhập hoặc mật khẩu.</div>
+
+    <div class="form-group">
+      <label for="inp-user">Tên đăng nhập</label>
+      <input type="text" id="inp-user" placeholder="Nhập tên đăng nhập" autocomplete="username"/>
+    </div>
+    <div class="form-group">
+      <label for="inp-pass">Mật khẩu</label>
+      <input type="password" id="inp-pass" placeholder="Nhập mật khẩu" autocomplete="current-password"/>
+    </div>
+
+    <button class="btn btn-primary" id="btn-login" onclick="doLogin()">Đăng nhập</button>
+    <a href="index.html" class="teacher-link" style="margin-top:16px;">← Về trang làm bài</a>
+  </div>
+</div>
+
+<!-- ========== TRANG GIÁO VIÊN (ẩn cho đến khi đăng nhập) ========== -->
+<div class="t-layout" id="teacher-page" style="display:none;">
+
+  <header class="t-header">
+    <div class="t-header-logo">📐 Trắc Nghiệm Toán</div>
+    <h1>Kết quả học sinh</h1>
+    <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+      <span style="font-size:0.82rem;color:var(--gray-7);">Xin chào, <strong id="logged-user">giáo viên</strong></span>
+      <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
+      <a href="index.html" style="font-size:0.85rem;color:var(--gray-7);text-decoration:none;">← Trang làm bài</a>
+    </div>
+  </header>
+
+  <div class="t-body">
+
+    <div class="t-stats">
+      <div class="t-stat-card s-blue">
+        <div class="s-label">Tổng lượt nộp</div>
+        <div class="s-val" id="stat-total">–</div>
+      </div>
+      <div class="t-stat-card">
+        <div class="s-label">Điểm trung bình</div>
+        <div class="s-val" id="stat-avg">–</div>
+      </div>
+      <div class="t-stat-card s-green">
+        <div class="s-label">Điểm cao nhất</div>
+        <div class="s-val" id="stat-high">–</div>
+      </div>
+      <div class="t-stat-card s-orange">
+        <div class="s-label">Tỉ lệ đạt ≥ 50%</div>
+        <div class="s-val" id="stat-pass">–</div>
+      </div>
+    </div>
+
+    <div class="t-table-card">
+      <div class="t-table-header">
+        <h2>Danh sách học sinh đã nộp bài</h2>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:0.8rem;color:var(--gray-7);" id="refresh-time"></span>
+          <button class="btn btn-outline" onclick="loadResults()" style="height:34px;width:auto;padding:0 12px;font-size:0.82rem;">🔄 Làm mới</button>
+          <button class="btn btn-danger" onclick="clearResults()">🗑 Xóa tất cả</button>
+        </div>
+      </div>
+      <div id="table-wrap">
+        <div class="t-empty"><div class="t-empty-icon">⏳</div><div class="t-empty-text">Đang tải...</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const TOKEN_KEY = 'teacher_token';
+let refreshTimer = null;
+
+// ===== KHỞI ĐỘNG =====
+window.addEventListener('DOMContentLoaded', async () => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    // Kiểm tra token còn hợp lệ không
+    const res = await fetch('/api/auth-check', { headers: { 'x-auth-token': token } });
+    const data = await res.json();
+    if (data.ok) {
+      showTeacherPage();
+      return;
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  }
+  // Hiện form đăng nhập
+  document.getElementById('login-screen').classList.add('active');
+});
+
+// ===== ĐĂNG NHẬP =====
+async function doLogin() {
+  const username = document.getElementById('inp-user').value.trim();
+  const password = document.getElementById('inp-pass').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('btn-login');
+
+  if (!username || !password) {
+    errEl.textContent = 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  btn.textContent = 'Đang đăng nhập...';
+  btn.disabled = true;
+  errEl.classList.remove('show');
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      errEl.textContent = data.error || 'Đăng nhập thất bại.';
+      errEl.classList.add('show');
+      // Rung input
+      document.getElementById('inp-pass').value = '';
+      document.getElementById('inp-pass').focus();
+    } else {
+      localStorage.setItem(TOKEN_KEY, data.token);
+      showTeacherPage();
+    }
+  } catch {
+    errEl.textContent = 'Không thể kết nối server.';
+    errEl.classList.add('show');
+  } finally {
+    btn.textContent = 'Đăng nhập';
+    btn.disabled = false;
+  }
+}
+
+// ===== ĐĂNG XUẤT =====
+async function doLogout() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    await fetch('/api/logout', { method: 'POST', headers: { 'x-auth-token': token } }).catch(() => {});
+    localStorage.removeItem(TOKEN_KEY);
+  }
+  if (refreshTimer) clearInterval(refreshTimer);
+  document.getElementById('teacher-page').style.display = 'none';
+  document.getElementById('login-screen').classList.add('active');
+  document.getElementById('inp-user').value = '';
+  document.getElementById('inp-pass').value = '';
+}
+
+// ===== HIỆN TRANG GIÁO VIÊN =====
+function showTeacherPage() {
+  document.getElementById('login-screen').classList.remove('active');
+  document.getElementById('teacher-page').style.display = 'flex';
+  loadResults();
+  refreshTimer = setInterval(loadResults, 15000);
+}
+
+// ===== LOAD KẾT QUẢ =====
+function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+
+async function loadResults() {
+  try {
+    const res = await fetch('/api/results', { headers: { 'x-auth-token': getToken() } });
+    if (res.status === 401) { doLogout(); return; }
+    const data = await res.json();
+    renderStats(data);
+    renderTable(data);
+    document.getElementById('refresh-time').textContent =
+      'Cập nhật lúc ' + new Date().toLocaleTimeString('vi-VN');
+  } catch {
+    document.getElementById('table-wrap').innerHTML =
+      '<div class="t-empty"><div class="t-empty-icon">❌</div><div class="t-empty-text">Không thể kết nối server</div></div>';
+  }
+}
+
+function renderStats(data) {
+  document.getElementById('stat-total').textContent = data.length || '0';
+  if (!data.length) {
+    ['stat-avg','stat-high','stat-pass'].forEach(id => document.getElementById(id).textContent = '–');
+    return;
+  }
+  const scores = data.map(r => r.score);
+  const avg = (scores.reduce((a,b)=>a+b,0)/data.length).toFixed(1);
+  const high = Math.max(...scores);
+  const pass = data.filter(r => r.score/r.total >= 0.5).length;
+  document.getElementById('stat-avg').textContent = avg;
+  document.getElementById('stat-high').textContent = high + '/' + data[0].total;
+  document.getElementById('stat-pass').textContent = Math.round(pass/data.length*100) + '%';
+}
+
+function renderTable(data) {
+  const wrap = document.getElementById('table-wrap');
+  if (!data.length) {
+    wrap.innerHTML = '<div class="t-empty"><div class="t-empty-icon">📭</div><div class="t-empty-text">Chưa có học sinh nào nộp bài</div></div>';
+    return;
+  }
+  const rows = data.map((r, i) => {
+    const pct = Math.round(r.score / r.total * 100);
+    const cls = pct >= 80 ? 'pill-high' : pct >= 50 ? 'pill-mid' : 'pill-low';
+    const date = new Date(r.submitted_at).toLocaleString('vi-VN');
+    const rank = pct >= 90 ? '🌟' : pct >= 75 ? '👍' : pct >= 50 ? '📘' : '💪';
+    return `<tr>
+      <td style="color:var(--gray-6);font-size:0.82rem;">${i+1}</td>
+      <td><strong>${esc(r.student_name)}</strong></td>
+      <td><span class="t-score-pill ${cls}">${r.score} / ${r.total}</span></td>
+      <td>${rank} ${pct}%</td>
+      <td style="color:var(--gray-7);font-size:0.82rem;">${date}</td>
+    </tr>`;
+  }).join('');
+  wrap.innerHTML = `<table>
+    <thead><tr><th>#</th><th>Họ và tên</th><th>Điểm</th><th>Kết quả</th><th>Thời gian nộp</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+async function clearResults() {
+  if (!confirm('Xóa toàn bộ kết quả? Không thể hoàn tác!')) return;
+  await fetch('/api/results', { method: 'DELETE', headers: { 'x-auth-token': getToken() } });
+  loadResults();
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Enter để đăng nhập
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('login-screen').classList.contains('active')) {
+    doLogin();
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Làm bài</title>
+  <link rel="stylesheet" href="style.css"/>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$','$']] },
+      options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+</head>
+<body>
+
+<!-- =========== TRANG LÀM BÀI =========== -->
+<div id="page-quiz" class="page active">
+
+  <header class="qz-header">
+    <div class="qz-header-logo">
+      <span id="subject-icon">📝</span>
+      <span id="subject-title">Trắc Nghiệm</span>
+    </div>
+    <div class="qz-header-title" id="subject-subtitle"></div>
+    <div class="qz-header-right">
+      <div class="qz-student-badge">
+        <div class="avatar" id="avatar-letter">A</div>
+        <span id="header-student-name">Học sinh</span>
+      </div>
+      <div class="qz-timer" id="timer-display">60:00</div>
+      <button class="btn btn-ghost" onclick="confirmSubmit()">Nộp bài</button>
+    </div>
+  </header>
+
+  <div class="shortcut-bar" id="shortcut-hint">
+    Phím tắt: &nbsp;<kbd>1</kbd>→A &nbsp;<kbd>2</kbd>→B &nbsp;<kbd>3</kbd>→C &nbsp;<kbd>4</kbd>→D
+    &nbsp;&nbsp;<kbd>→</kbd>Câu tiếp &nbsp;<kbd>←</kbd>Câu trước &nbsp;<kbd>Esc</kbd>Bỏ qua
+  </div>
+
+  <div class="qz-body">
+    <main class="qz-main">
+      <div class="qz-question-card">
+        <div class="qz-q-meta">
+          <span class="qz-q-num-badge" id="q-badge">Câu 1</span>
+          <span class="qz-q-type">Trắc nghiệm</span>
+        </div>
+        <div class="qz-q-text" id="q-text"></div>
+        <div class="qz-choose-hint">Chọn một đáp án đúng</div>
+        <div class="qz-options" id="q-options"></div>
+        <div class="check-feedback" id="check-feedback"></div>
+        <div class="check-btn-wrap">
+          <button class="btn-check" id="btn-check" onclick="checkAnswer()">Kiểm tra</button>
+        </div>
+      </div>
+
+      <div class="qz-nav">
+        <button class="btn btn-outline" id="btn-prev" onclick="prevQ()">← Câu trước</button>
+        <span class="qz-nav-center" id="nav-center">Câu 1 / ?</span>
+        <button class="btn btn-outline" id="btn-next" onclick="nextQ()">Câu sau →</button>
+      </div>
+
+      <div class="mobile-bar">
+        <div class="mobile-bar-progress">
+          <div class="mb-text">Đã làm: <strong id="mb-answered">0</strong> / <strong id="mb-total">?</strong></div>
+          <div class="mb-bar-wrap"><div class="mb-bar" id="mb-bar"></div></div>
+        </div>
+        <button class="btn-mobile-panel" onclick="openMobilePanel()">☰ Câu hỏi</button>
+      </div>
+    </main>
+  </div>
+
+  <div class="qz-bottom-bar">
+    <button class="bb-restart" onclick="confirmRetake()">↺ Bắt đầu lại</button>
+    <div class="bb-dots-wrap">
+      <div class="bb-dots" id="progress-dots"></div>
+    </div>
+    <span class="bb-counter" id="bottom-answered-text">Câu 1/?</span>
+    <button class="bb-submit" onclick="confirmSubmit()">Nộp bài »</button>
+  </div>
+</div>
+
+<!-- Mobile panel -->
+<div class="mobile-panel-overlay" id="mobile-overlay" onclick="closeMobilePanel()"></div>
+<div class="mobile-panel" id="mobile-panel">
+  <div class="mp-handle"></div>
+  <div class="mp-header">
+    <h3>Danh sách câu hỏi</h3>
+    <button class="mp-close" onclick="closeMobilePanel()">✕</button>
+  </div>
+  <div class="mp-grid" id="mp-grid"></div>
+  <button class="mp-submit" onclick="closeMobilePanel(); confirmSubmit()">📩 Nộp bài</button>
+</div>
+
+<!-- =========== TRANG KẾT QUẢ =========== -->
+<div id="page-result" class="page">
+  <div class="result-header">
+    <span style="font-size:20px;">📋</span>
+    <h2>Kết quả làm bài</h2>
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <button class="btn btn-outline" onclick="retake()" style="height:36px;width:auto;padding:0 14px;font-size:0.85rem;">🔄 Làm lại</button>
+      <a href="index.html" class="btn btn-outline" style="height:36px;padding:0 14px;font-size:0.85rem;">🏠 Trang chủ</a>
+    </div>
+  </div>
+  <div class="result-body">
+    <div class="score-summary">
+      <div class="score-circle-wrap">
+        <div class="score-circle">
+          <span class="sc-num" id="sc-num">0</span>
+          <span class="sc-denom" id="sc-denom">/10</span>
+        </div>
+      </div>
+      <div class="score-info">
+        <h2 id="sc-name">Học sinh</h2>
+        <div class="score-stats">
+          <div class="stat-item"><div class="stat-dot correct"></div><span id="sc-correct">0 đúng</span></div>
+          <div class="stat-item"><div class="stat-dot wrong"></div><span id="sc-wrong">0 sai</span></div>
+          <div class="stat-item"><div class="stat-dot skip"></div><span id="sc-skip">0 bỏ qua</span></div>
+        </div>
+        <div class="score-rank" id="sc-rank">–</div>
+      </div>
+    </div>
+    <div class="review-section">
+      <h3>Chi tiết từng câu</h3>
+      <div id="review-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal nộp bài -->
+<div id="modal" class="modal-overlay" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h3>Xác nhận nộp bài</h3>
+    <p id="modal-msg"></p>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Quay lại</button>
+      <button class="btn btn-primary" onclick="submitQuiz()" style="width:auto;">Nộp bài</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal làm lại -->
+<div id="modal-retake" class="modal-overlay" onclick="closeRetakeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h3>Bắt đầu lại?</h3>
+    <p>Toàn bộ câu trả lời và thời gian sẽ bị reset.</p>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeRetakeModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="retake()" style="width:auto;">Bắt đầu lại</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="confetti-canvas"></canvas>
+<div class="celebration-overlay" id="celebration-overlay"></div>
+
+<script src="quiz.js"></script>
+<script src="effects.js"></script>
+</body>
+</html>

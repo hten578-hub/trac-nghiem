@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chọn Môn Học</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, #e6f4ff 0%, #f0f5ff 100%);
+      min-height: 100vh;
+      color: #262626;
+    }
+
+    .header {
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-logo { font-weight: 700; font-size: 1rem; color: #1890ff; }
+    .header-link { font-size: .85rem; color: #8c8c8c; text-decoration: none; }
+    .header-link:hover { color: #1890ff; }
+
+    /* Container duy nhất căn giữa */
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 24px 48px;
+    }
+
+    /* Hero */
+    .hero { text-align: center; margin-bottom: 20px; }
+    .hero-icon { font-size: 40px; display: block; margin-bottom: 10px; }
+    .hero h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; }
+    .hero p { color: #8c8c8c; font-size: .88rem; }
+
+    /* Input — giới hạn 400px, căn giữa trong container */
+    .name-box { max-width: 400px; margin: 0 auto 24px; }
+    .name-box label { display: block; font-size: .88rem; font-weight: 600; color: #595959; margin-bottom: 7px; }
+    .name-box input {
+      width: 100%; height: 44px; padding: 0 14px;
+      border: 1.5px solid #d9d9d9; border-radius: 8px;
+      font-size: .95rem; outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .name-box input:focus { border-color: #1890ff; box-shadow: 0 0 0 3px rgba(24,144,255,.12); }
+    .name-error { color: #ff4d4f; font-size: .8rem; margin-top: 5px; display: none; }
+    .name-error.show { display: block; }
+
+    /* Grid */
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+    }
+    .card { width: 230px; flex-shrink: 0; }
+
+    /* Card */
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      padding: 22px 20px;
+      text-align: center;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,0,0,.12); border-color: #1890ff; }
+    .card-icon { font-size: 36px; display: block; margin-bottom: 10px; }
+    .card-title { font-size: 1rem; font-weight: 800; margin-bottom: 3px; }
+    .card-grade { font-size: .78rem; color: #8c8c8c; margin-bottom: 12px; }
+    .card-tags { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+    .tag { background: #f5f5f5; color: #8c8c8c; border-radius: 20px; padding: 2px 9px; font-size: .75rem; font-weight: 600; }
+    .tag.blue { background: #e6f4ff; color: #1890ff; }
+    .card-btn {
+      width: 100%; height: 38px;
+      background: #1890ff; color: #fff;
+      border: none; border-radius: 8px;
+      font-size: .88rem; font-weight: 700;
+      cursor: pointer; transition: background .15s;
+    }
+    .card-btn:hover { background: #0c6dbd; }
+    .loading { text-align: center; color: #8c8c8c; padding: 32px; }
+
+    @media (max-width: 600px) {
+      .header { padding: 12px 16px; }
+      .container { padding: 24px 16px 40px; }
+      .hero h1 { font-size: 1.3rem; }
+      .name-box { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">🎓 Hệ thống Trắc nghiệm</div>
+  <a href="teacher.html" class="header-link">🔑 Giáo viên</a>
+</div>
+
+<div class="container">
+
+  <div class="hero">
+    <span class="hero-icon">📝</span>
+    <h1>Chọn Môn Học</h1>
+    <p>Nhập tên rồi chọn môn để xem danh sách bài</p>
+  </div>
+
+  <div class="name-box">
+    <label for="sname">Họ và tên học sinh</label>
+    <input type="text" id="sname" placeholder="Nhập họ tên của bạn..." autocomplete="off"/>
+    <div class="name-error" id="name-err">Vui lòng nhập họ tên trước!</div>
+  </div>
+
+  <div class="grid" id="grid">
+    <div class="loading">⏳ Đang tải...</div>
+  </div>
+
+</div>
+
+<script>
+async function load() {
+  try {
+    const res = await fetch('/api/groups');
+    const groups = await res.json();
+    const grid = document.getElementById('grid');
+    if (!groups.length) { grid.innerHTML = '<div class="loading">Chưa có môn nào.</div>'; return; }
+    grid.innerHTML = groups.map(g => `
+      <div class="card" onclick="go('${g.id}')">
+        <span class="card-icon">${g.icon}</span>
+        <div class="card-title">${g.title}</div>
+        <div class="card-grade">${g.grade}</div>
+        <div class="card-tags">
+          <span class="tag blue">${g.lessons.length} bài</span>
+          <span class="tag">${g.subject}</span>
+        </div>
+        <button class="card-btn">Xem danh sách bài →</button>
+      </div>
+    `).join('');
+  } catch {
+    document.getElementById('grid').innerHTML = '<div class="loading">❌ Không thể kết nối server</div>';
+  }
+}
+
+function go(groupId) {
+  const name = document.getElementById('sname').value.trim();
+  const err  = document.getElementById('name-err');
+  const inp  = document.getElementById('sname');
+  if (!name) {
+    err.classList.add('show');
+    inp.style.borderColor = '#ff4d4f';
+    inp.focus();
+    return;
+  }
+  err.classList.remove('show');
+  inp.style.borderColor = '';
+  sessionStorage.setItem('student_name', name);
+  location.href = `lessons.html?group=${groupId}`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  load();
+  document.getElementById('sname').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('sname').blur();
+  });
+});
+</script>
+</body>
+</html>

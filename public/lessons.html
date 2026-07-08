@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Danh sách bài</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    body { background:linear-gradient(135deg,#e6f4ff,#f0f5ff); min-height:100vh; }
+
+    .lessons-header { display:flex; align-items:center; gap:12px; padding:16px 28px; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+    .back-btn { display:flex; align-items:center; gap:6px; color:var(--gray-7); text-decoration:none; font-size:.88rem; transition:color .15s; }
+    .back-btn:hover { color:var(--blue); }
+    .lessons-header-title { font-size:1rem; font-weight:700; color:var(--gray-9); flex:1; }
+    .student-badge { display:flex; align-items:center; gap:7px; background:var(--gray-3); border-radius:20px; padding:5px 12px 5px 8px; font-size:.83rem; color:var(--gray-8); font-weight:500; }
+    .student-badge .av { width:24px; height:24px; background:var(--blue); border-radius:50%; color:#fff; font-size:.7rem; font-weight:700; display:flex; align-items:center; justify-content:center; }
+
+    .lessons-body { max-width:680px; margin:0 auto; padding:28px 20px 48px; }
+
+    .lessons-hero { margin-bottom:24px; }
+    .lessons-hero-icon { font-size:40px; margin-bottom:8px; }
+    .lessons-hero h1 { font-size:1.4rem; font-weight:800; color:var(--gray-9); margin-bottom:4px; }
+    .lessons-hero p { color:var(--gray-7); font-size:.88rem; }
+
+    .lessons-list { display:flex; flex-direction:column; gap:12px; }
+
+    .lesson-card { background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.07); padding:18px 20px; cursor:pointer; transition:all .18s; border:1.5px solid transparent; display:flex; align-items:center; gap:16px; }
+    .lesson-card:hover { transform:translateY(-2px); box-shadow:0 4px 20px rgba(0,0,0,.11); border-color:var(--blue); }
+
+    .lesson-num { width:36px; height:36px; border-radius:10px; background:var(--blue-light); color:var(--blue); font-weight:800; font-size:.9rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .lesson-info { flex:1; }
+    .lesson-title { font-size:1rem; font-weight:700; color:var(--gray-9); margin-bottom:3px; }
+    .lesson-sub { font-size:.82rem; color:var(--gray-7); }
+    .lesson-meta { display:flex; gap:7px; margin-top:7px; flex-wrap:wrap; }
+    .lesson-tag { background:var(--gray-3); color:var(--gray-7); border-radius:20px; padding:2px 9px; font-size:.75rem; font-weight:600; }
+    .lesson-tag.blue { background:var(--blue-light); color:var(--blue); }
+    .lesson-arrow { font-size:1.1rem; color:var(--gray-5); transition:color .15s; flex-shrink:0; }
+    .lesson-card:hover .lesson-arrow { color:var(--blue); }
+
+    .loading-state { text-align:center; color:var(--gray-7); padding:48px; }
+  </style>
+</head>
+<body>
+
+<header class="lessons-header">
+  <a href="index.html" class="back-btn">← Quay lại</a>
+  <div class="lessons-header-title" id="header-title">Danh sách bài</div>
+  <div class="student-badge">
+    <div class="av" id="av-letter">A</div>
+    <span id="av-name">Học sinh</span>
+  </div>
+</header>
+
+<div class="lessons-body">
+  <div class="lessons-hero">
+    <div class="lessons-hero-icon" id="group-icon">📚</div>
+    <h1 id="group-title">Đang tải...</h1>
+    <p id="group-sub"></p>
+  </div>
+  <div class="lessons-list" id="lessons-list">
+    <div class="loading-state">⏳ Đang tải danh sách bài...</div>
+  </div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const groupId = params.get('group');
+const studentName = sessionStorage.getItem('student_name');
+
+if (!groupId || !studentName) window.location.href = 'index.html';
+
+// Hiển thị tên học sinh
+document.getElementById('av-name').textContent = studentName;
+document.getElementById('av-letter').textContent = studentName.trim().split(' ').pop()[0].toUpperCase();
+
+async function loadLessons() {
+  try {
+    const res = await fetch('/api/groups');
+    const groups = await res.json();
+    const group = groups.find(g => g.id === groupId);
+    if (!group) { window.location.href = 'index.html'; return; }
+
+    document.title = group.title + ' — Danh sách bài';
+    document.getElementById('header-title').textContent = group.title;
+    document.getElementById('group-icon').textContent = group.icon;
+    document.getElementById('group-title').textContent = group.title;
+    document.getElementById('group-sub').textContent = `${group.grade} · ${group.lessons.length} bài`;
+
+    const list = document.getElementById('lessons-list');
+    if (!group.lessons.length) {
+      list.innerHTML = '<div class="loading-state">Chưa có bài nào.</div>';
+      return;
+    }
+    list.innerHTML = group.lessons.map((lesson, i) => `
+      <div class="lesson-card" onclick="goToLesson('${lesson.id}')">
+        <div class="lesson-num">${i + 1}</div>
+        <div class="lesson-info">
+          <div class="lesson-title">${lesson.title}</div>
+          <div class="lesson-sub">${lesson.subtitle}</div>
+          <div class="lesson-meta">
+            <span class="lesson-tag blue">${lesson.totalQuestions} câu</span>
+            <span class="lesson-tag">⏱ ${lesson.timeLimit} phút</span>
+          </div>
+        </div>
+        <div class="lesson-arrow">›</div>
+      </div>
+    `).join('');
+  } catch {
+    document.getElementById('lessons-list').innerHTML = '<div class="loading-state">❌ Không thể kết nối server</div>';
+  }
+}
+
+function goToLesson(subjectId) {
+  window.location.href = `quiz.html?subject=${subjectId}`;
+}
+
+loadLessons();
+</script>
+</body>
+</html>
