@@ -158,6 +158,7 @@ function renderQuestion() {
   const q = questions[current];
   const total = questions.length;
   const isChecked = checked[current]; // đã kiểm tra rồi?
+  // console.log(`Câu ${current+1}: checked=${isChecked}, answer=${answers[current]}`); // debug
 
   document.getElementById('q-badge').textContent = `Câu ${current + 1}`;
   document.getElementById('nav-center').textContent = `Câu ${current + 1} / ${total}`;
@@ -172,12 +173,10 @@ function renderQuestion() {
     btn.className = 'qz-option' + (answers[current] === i ? ' selected' : '');
 
     if (isChecked) {
-      // Câu đã check: lock lại, không cho chọn
+      // Câu đã check: lock hoàn toàn, không cho click
       btn.classList.add('locked');
-      if (i === answers[current]) {
-        // Đây là đáp án đã chọn — màu sẽ tự hiển thị đúng/sai theo class
-        // Không set thêm gì, để CSS handle
-      }
+      btn.style.pointerEvents = 'none';
+      btn.style.cursor = 'default';
     } else {
       btn.addEventListener('click', () => selectOption(i));
     }
