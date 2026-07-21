@@ -664,3 +664,11 @@ tbody td { padding: 13px 16px; font-size: .9rem; color: var(--gray-9); }
   border-color: #ff4d4f;
   color: #fff;
 }
+
+/* ===== LOCK OPTIONS SAU KHI KIỂM TRA ===== */
+.qz-option.locked,
+.qz-option[disabled] {
+  pointer-events: none !important;
+  cursor: default !important;
+  user-select: none !important;
+}

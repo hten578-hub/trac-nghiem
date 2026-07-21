@@ -2,6 +2,7 @@
 let questions = [];
 let answers = [];
 let checked = []; // track câu nào đã bấm Kiểm tra rồi (không cho chọn lại)
+let checkResults = []; // lưu kết quả {isCorrect, correct, explain} của từng câu
 let current = 0;
 let studentName = '';
 let subjectId = '';
@@ -16,7 +17,7 @@ const SAVE_KEY = () => `quiz_progress_${subjectId}`;
 // ===== LOCALSTORAGE =====
 function saveProgress() {
   localStorage.setItem(SAVE_KEY(), JSON.stringify({
-    studentName, answers, checked, current, timeLeft, savedAt: Date.now()
+    studentName, answers, checked, checkResults, current, timeLeft, savedAt: Date.now()
   }));
 }
 function loadProgress() {
@@ -111,11 +112,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (saved && saved.studentName === studentName && saved.answers?.length === questions.length) {
     answers = saved.answers;
     checked = saved.checked || new Array(questions.length).fill(false);
+    checkResults = saved.checkResults || new Array(questions.length).fill(null);
     current = saved.current || 0;
     timeLeft = saved.timeLeft > 0 ? saved.timeLeft : (subjectMeta.timeLimit || 60) * 60;
   } else {
     answers = new Array(questions.length).fill(-1);
     checked = new Array(questions.length).fill(false);
+    checkResults = new Array(questions.length).fill(null);
     timeLeft = (subjectMeta.timeLimit || 60) * 60;
   }
 
@@ -171,17 +174,18 @@ function renderQuestion() {
   q.options.forEach((opt, i) => {
     const btn = document.createElement('button');
     btn.className = 'qz-option' + (answers[current] === i ? ' selected' : '');
+    btn.innerHTML = `<span class="qz-opt-label">${LABELS[i]}</span><span class="qz-opt-text">${opt}</span>`;
 
     if (isChecked) {
-      // Câu đã check: lock hoàn toàn, không cho click
+      // Câu đã check: lock hoàn toàn
       btn.classList.add('locked');
-      btn.style.pointerEvents = 'none';
-      btn.style.cursor = 'default';
+      btn.setAttribute('disabled', 'true');
+      btn.setAttribute('onclick', 'return false');
+      btn.style.cssText += ';pointer-events:none!important;cursor:default!important;';
     } else {
       btn.addEventListener('click', () => selectOption(i));
     }
 
-    btn.innerHTML = `<span class="qz-opt-label">${LABELS[i]}</span><span class="qz-opt-text">${opt}</span>`;
     container.appendChild(btn);
   });
 
@@ -204,6 +208,7 @@ function renderQuestion() {
 
 function selectOption(index) {
   if (checked[current]) return; // đã check rồi, không cho đổi
+  if (answers[current] === index) return; // đã chọn rồi
   answers[current] = index;
   document.querySelectorAll('.qz-option').forEach((btn, i) => {
     btn.classList.toggle('selected', i === index);
@@ -213,7 +218,32 @@ function selectOption(index) {
 }
 
 function restoreCheckedState() {
-  // Khôi phục trạng thái đã check — nút đổi thành "Câu tiếp theo"
+  const result = checkResults[current];
+  const fb = document.getElementById('check-feedback');
+
+  if (result && fb) {
+    const q = questions[current];
+    if (result.isCorrect) {
+      fb.innerHTML = `<div class="feedback-correct">
+        <div class="feedback-header"><span class="feedback-icon">✅</span> Chính xác!</div>
+        ${result.explain ? `<div class="feedback-explain">💡 ${result.explain}</div>` : ''}
+      </div>`;
+      // Tô xanh đáp án đúng
+      document.querySelectorAll('.qz-option').forEach((opt, i) => {
+        if (i === result.correct) opt.classList.add('correct-ans');
+      });
+    } else {
+      fb.innerHTML = `<div class="feedback-wrong">
+        <div class="feedback-header"><span class="feedback-icon">❌</span> Chưa đúng rồi!</div>
+      </div>`;
+      // Tô đỏ đáp án đã chọn sai
+      document.querySelectorAll('.qz-option').forEach((opt, i) => {
+        if (i === result.selected) opt.classList.add('wrong-ans');
+      });
+    }
+  }
+
+  // Đổi nút thành Câu tiếp theo
   const btn = document.getElementById('btn-check');
   if (btn) {
     btn.disabled = false;
@@ -223,9 +253,6 @@ function restoreCheckedState() {
       else confirmSubmit();
     };
   }
-  // Không hiện lại feedback cũ (đơn giản hóa)
-  const fb = document.getElementById('check-feedback');
-  if (fb) fb.innerHTML = '<div style="padding:8px 12px;background:#f5f5f5;border-radius:6px;font-size:.82rem;color:#8c8c8c;">✓ Câu này đã được kiểm tra.</div>';
 }
 
 // ===== NAVIGATION =====
@@ -367,6 +394,8 @@ async function checkAnswer() {
 
     // Đánh dấu câu này đã kiểm tra — không cho chọn lại
     checked[current] = true;
+    checkResults[current] = { isCorrect: data.isCorrect, correct: data.correct, explain: data.explain, selected: answers[current] };
+    console.log('checked array after:', [...checked]); // debug
     saveProgress();
 
   } catch (e) {
@@ -501,6 +530,7 @@ async function retake() {
   current = 0;
   answers = new Array(questions.length).fill(-1);
   checked = new Array(questions.length).fill(false);
+  checkResults = new Array(questions.length).fill(null);
   timeLeft = (subjectMeta.timeLimit || 60) * 60;
   buildNumGrid(); renderQuestion(); startTimer();
   showPage('page-quiz');
