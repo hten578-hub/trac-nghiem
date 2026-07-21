@@ -1,6 +1,7 @@
 // ===== STATE =====
 let questions = [];
 let answers = [];
+let checked = []; // track câu nào đã bấm Kiểm tra rồi (không cho chọn lại)
 let current = 0;
 let studentName = '';
 let subjectId = '';
@@ -15,7 +16,7 @@ const SAVE_KEY = () => `quiz_progress_${subjectId}`;
 // ===== LOCALSTORAGE =====
 function saveProgress() {
   localStorage.setItem(SAVE_KEY(), JSON.stringify({
-    studentName, answers, current, timeLeft, savedAt: Date.now()
+    studentName, answers, checked, current, timeLeft, savedAt: Date.now()
   }));
 }
 function loadProgress() {
@@ -109,9 +110,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const saved = loadProgress();
   if (saved && saved.studentName === studentName && saved.answers?.length === questions.length) {
     answers = saved.answers;
+    checked = saved.checked || new Array(questions.length).fill(false);
     current = saved.current || 0;
     timeLeft = saved.timeLeft > 0 ? saved.timeLeft : (subjectMeta.timeLimit || 60) * 60;
   } else {
+    answers = new Array(questions.length).fill(-1);
+    checked = new Array(questions.length).fill(false);
     timeLeft = (subjectMeta.timeLimit || 60) * 60;
   }
 
@@ -153,6 +157,7 @@ function renderTimer() {
 function renderQuestion() {
   const q = questions[current];
   const total = questions.length;
+  const isChecked = checked[current]; // đã kiểm tra rồi?
 
   document.getElementById('q-badge').textContent = `Câu ${current + 1}`;
   document.getElementById('nav-center').textContent = `Câu ${current + 1} / ${total}`;
@@ -165,15 +170,32 @@ function renderQuestion() {
   q.options.forEach((opt, i) => {
     const btn = document.createElement('button');
     btn.className = 'qz-option' + (answers[current] === i ? ' selected' : '');
+
+    if (isChecked) {
+      // Câu đã check: lock lại, không cho chọn
+      btn.classList.add('locked');
+      if (i === answers[current]) {
+        // Đây là đáp án đã chọn — màu sẽ tự hiển thị đúng/sai theo class
+        // Không set thêm gì, để CSS handle
+      }
+    } else {
+      btn.addEventListener('click', () => selectOption(i));
+    }
+
     btn.innerHTML = `<span class="qz-opt-label">${LABELS[i]}</span><span class="qz-opt-text">${opt}</span>`;
-    btn.addEventListener('click', () => selectOption(i));
     container.appendChild(btn);
   });
 
   updateNumGrid();
   updateProgress();
   renderDots();
-  resetCheckState();
+
+  // Nếu đã check: khôi phục feedback cũ và đổi nút
+  if (isChecked) {
+    restoreCheckedState();
+  } else {
+    resetCheckState();
+  }
 
   if (window.MathJax?.typesetPromise) {
     MathJax.typesetClear([document.getElementById('q-text'), container]);
@@ -182,12 +204,29 @@ function renderQuestion() {
 }
 
 function selectOption(index) {
+  if (checked[current]) return; // đã check rồi, không cho đổi
   answers[current] = index;
   document.querySelectorAll('.qz-option').forEach((btn, i) => {
     btn.classList.toggle('selected', i === index);
   });
   updateNumGrid(); updateProgress(); renderDots();
   saveProgress();
+}
+
+function restoreCheckedState() {
+  // Khôi phục trạng thái đã check — nút đổi thành "Câu tiếp theo"
+  const btn = document.getElementById('btn-check');
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = current < questions.length - 1 ? 'Câu tiếp theo →' : 'Xem kết quả';
+    btn.onclick = () => {
+      if (current < questions.length - 1) nextQ();
+      else confirmSubmit();
+    };
+  }
+  // Không hiện lại feedback cũ (đơn giản hóa)
+  const fb = document.getElementById('check-feedback');
+  if (fb) fb.innerHTML = '<div style="padding:8px 12px;background:#f5f5f5;border-radius:6px;font-size:.82rem;color:#8c8c8c;">✓ Câu này đã được kiểm tra.</div>';
 }
 
 // ===== NAVIGATION =====
@@ -326,6 +365,11 @@ async function checkAnswer() {
     };
 
     if (window.MathJax?.typesetPromise) MathJax.typesetPromise([fb]).catch(() => {});
+
+    // Đánh dấu câu này đã kiểm tra — không cho chọn lại
+    checked[current] = true;
+    saveProgress();
+
   } catch (e) {
     btn.disabled = false; btn.textContent = 'Kiểm tra';
     alert('Lỗi: ' + e.message);
@@ -455,7 +499,9 @@ async function retake() {
     }
   } catch {}
   stopTimer(); clearProgress();
-  current = 0; answers = new Array(questions.length).fill(-1);
+  current = 0;
+  answers = new Array(questions.length).fill(-1);
+  checked = new Array(questions.length).fill(false);
   timeLeft = (subjectMeta.timeLimit || 60) * 60;
   buildNumGrid(); renderQuestion(); startTimer();
   showPage('page-quiz');
