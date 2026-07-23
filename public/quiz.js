@@ -544,14 +544,28 @@ function renderResult(data) {
     else { cardClass = 'rc-wrong'; badgeText = '✗ Sai'; }
 
     let answersHTML = '';
-    if (item.isCorrect) {
-      answersHTML = `<div class="rc-ans-row ra-selected-correct"><span class="ra-icon">✓</span><span class="ra-label">${LABELS[item.selected]}.</span><span>${q.options[item.selected]}</span></div>`;
-    } else if (item.selected === -1) {
-      answersHTML = `<div class="rc-ans-row ra-correct"><span class="ra-icon">→</span><span class="ra-label">${LABELS[item.correct]}.</span><span>Đáp án đúng: ${q.options[item.correct]}</span></div>`;
+    if (item.type === 'fill') {
+      // Câu điền đáp án
+      if (item.isCorrect) {
+        answersHTML = `<div class="rc-ans-row ra-selected-correct"><span class="ra-icon">✓</span><span>Bạn điền: <strong>${item.selected}</strong></span></div>`;
+      } else if (item.selected === -1 || item.selected === '') {
+        answersHTML = `<div class="rc-ans-row ra-correct"><span class="ra-icon">→</span><span>Chưa điền. Đáp án đúng: <strong>${item.correct}</strong></span></div>`;
+      } else {
+        answersHTML = `
+          <div class="rc-ans-row ra-selected-wrong"><span class="ra-icon">✗</span><span>Bạn điền: <strong>${item.selected}</strong></span></div>
+          <div class="rc-ans-row ra-correct"><span class="ra-icon">✓</span><span>Đáp án đúng: <strong>${item.correct}</strong></span></div>`;
+      }
     } else {
-      answersHTML = `
-        <div class="rc-ans-row ra-selected-wrong"><span class="ra-icon">✗</span><span class="ra-label">${LABELS[item.selected]}.</span><span>${q.options[item.selected]}</span></div>
-        <div class="rc-ans-row ra-correct"><span class="ra-icon">✓</span><span class="ra-label">${LABELS[item.correct]}.</span><span>Đáp án đúng: ${q.options[item.correct]}</span></div>`;
+      // Câu trắc nghiệm
+      if (item.isCorrect) {
+        answersHTML = `<div class="rc-ans-row ra-selected-correct"><span class="ra-icon">✓</span><span class="ra-label">${LABELS[item.selected]}.</span><span>${q.options?.[item.selected] || ''}</span></div>`;
+      } else if (item.selected === -1) {
+        answersHTML = `<div class="rc-ans-row ra-correct"><span class="ra-icon">→</span><span class="ra-label">${LABELS[item.correct]}.</span><span>Đáp án đúng: ${q.options?.[item.correct] || ''}</span></div>`;
+      } else {
+        answersHTML = `
+          <div class="rc-ans-row ra-selected-wrong"><span class="ra-icon">✗</span><span class="ra-label">${LABELS[item.selected]}.</span><span>${q.options?.[item.selected] || ''}</span></div>
+          <div class="rc-ans-row ra-correct"><span class="ra-icon">✓</span><span class="ra-label">${LABELS[item.correct]}.</span><span>Đáp án đúng: ${q.options?.[item.correct] || ''}</span></div>`;
+      }
     }
 
     const explainHTML = item.isCorrect && item.explain
