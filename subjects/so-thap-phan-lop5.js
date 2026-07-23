@@ -9,7 +9,7 @@
 module.exports = {
   meta: {
     id: 'so-thap-phan-lop5',
-    title: 'Số Thập Phân 1',
+    title: 'Số Thập Phân 2',
     subtitle: 'Giới thiệu và cấu tạo số thập phân',
     icon: '🔢',
     timeLimit: 45,
@@ -18,7 +18,7 @@ module.exports = {
     group_id: 'toan-lop5',
     group_title: 'Toán Lớp 5',
     group_icon: '📐',
-    createdAt: '2026-07-21',
+    createdAt: '2026-07-23',
   },
   questions: [
     // ===== PHẦN 1: VIẾT SỐ THẬP PHÂN =====

@@ -1,7 +1,7 @@
 module.exports = {
   meta: {
     id: 'so-thap-phan-2-lop5',
-    title: 'Số Thập Phân 2',
+    title: 'Số Thập Phân 1',
     subtitle: 'Tia số, đọc số, đổi đơn vị',
     icon: '🔢',
     timeLimit: 40,
@@ -10,7 +10,7 @@ module.exports = {
     group_id: 'toan-lop5',
     group_title: 'Toán Lớp 5',
     group_icon: '📐',
-    createdAt: '2026-07-23',
+    createdAt: '2026-07-21',
   },
   questions: [
     // ===== PHẦN A: TIA SỐ =====
