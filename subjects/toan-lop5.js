@@ -24,6 +24,7 @@ module.exports = {
     group_id: 'toan-lop5',         // ID nhóm môn
     group_title: 'Toán Lớp 5',    // Tên nhóm hiển thị
     group_icon: '📐',
+    createdAt: '2026-07-07',
   },
   questions: [
     {

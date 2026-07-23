@@ -18,6 +18,7 @@ module.exports = {
     group_id: 'toan-lop5',
     group_title: 'Toán Lớp 5',
     group_icon: '📐',
+    createdAt: '2026-07-21',
   },
   questions: [
     // ===== PHẦN 1: VIẾT SỐ THẬP PHÂN =====

@@ -111,7 +111,11 @@ async function loadLessons() {
       list.innerHTML = '<div class="loading-state">Chưa có bài nào.</div>';
       return;
     }
-    list.innerHTML = group.lessons.map((lesson, i) => `
+    list.innerHTML = group.lessons.map((lesson, i) => {
+      const dateStr = lesson.createdAt
+        ? new Date(lesson.createdAt).toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' })
+        : '';
+      return `
       <div class="lesson-card" onclick="goToLesson('${lesson.id}')">
         <div class="lesson-num">${i + 1}</div>
         <div class="lesson-info">
@@ -120,11 +124,12 @@ async function loadLessons() {
           <div class="lesson-meta">
             <span class="lesson-tag blue">${lesson.totalQuestions} câu</span>
             <span class="lesson-tag">⏱ ${lesson.timeLimit} phút</span>
+            ${dateStr ? `<span class="lesson-tag">📅 ${dateStr}</span>` : ''}
           </div>
         </div>
         <div class="lesson-arrow">›</div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   } catch {
     document.getElementById('lessons-list').innerHTML = '<div class="loading-state">❌ Không thể kết nối server</div>';
   }
@@ -168,6 +173,9 @@ loadLessons = async function() {
       const locked = att.remaining <= 0;
       const statusText = locked ? `Hết ${att.max} lượt` : `Còn ${att.remaining}/${att.max} lượt`;
       const statusStyle = locked ? 'background:#fff2f0;color:#ff4d4f;' : 'background:#f6ffed;color:#52c41a;';
+      const dateStr = lesson.createdAt
+        ? new Date(lesson.createdAt).toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' })
+        : '';
       return `
         <div class="lesson-card" onclick="${locked ? '' : `goToLesson('${lesson.id}')`}" style="${locked ? 'opacity:.65;cursor:not-allowed;' : ''}">
           <div class="lesson-num">${i + 1}</div>
@@ -178,9 +186,10 @@ loadLessons = async function() {
               <span class="lesson-tag blue">${lesson.totalQuestions} câu</span>
               <span class="lesson-tag">${lesson.timeLimit} phút</span>
               <span class="lesson-tag" style="${statusStyle}">${statusText}</span>
+              ${dateStr ? `<span class="lesson-tag">📅 ${dateStr}</span>` : ''}
             </div>
           </div>
-          <div class="lesson-arrow">${locked ? '!' : '>'}</div>
+          <div class="lesson-arrow">${locked ? '🔒' : '›'}</div>
         </div>
       `;
     }).join('');

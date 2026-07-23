@@ -10,6 +10,7 @@ module.exports = {
     group_id: 'toan-lop5',
     group_title: 'Toán Lớp 5',
     group_icon: '📐',
+    createdAt: '2026-07-23',
   },
   questions: [
     // ===== PHẦN A: TIA SỐ =====

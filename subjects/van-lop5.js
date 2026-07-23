@@ -14,6 +14,7 @@ module.exports = {
     group_id: 'tiengviet-lop5',
     group_title: 'Tiếng Việt Lớp 5',
     group_icon: '📖',
+    createdAt: '2026-07-07',
   },
   questions: [
     {

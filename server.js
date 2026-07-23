@@ -189,9 +189,17 @@ app.get('/api/groups', (req, res) => {
     };
     groups[gid].lessons.push({
       id: s.meta.id, title: s.meta.title, subtitle: s.meta.subtitle || '',
-      icon: s.meta.icon || '📄', timeLimit: s.meta.timeLimit, totalQuestions: s.questions.length
+      icon: s.meta.icon || '📄', timeLimit: s.meta.timeLimit,
+      totalQuestions: s.questions.length,
+      createdAt: s.meta.createdAt || '2026-01-01'
     });
   });
+
+  // Sắp xếp lessons theo createdAt mới nhất lên đầu
+  Object.values(groups).forEach(g => {
+    g.lessons.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  });
+
   res.json(Object.values(groups));
 });
 
