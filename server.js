@@ -198,15 +198,24 @@ app.get('/api/groups', (req, res) => {
 app.get('/api/subjects/:id/questions', (req, res) => {
   const s = subjects[req.params.id];
   if (!s) return res.status(404).json({ error: 'Không tìm thấy đề.' });
-  res.json({ meta: s.meta, questions: s.questions.map(({ id, question, options }) => ({ id, question, options })) });
+  res.json({ meta: s.meta, questions: s.questions.map(({ id, question, options, type }) => ({ id, question, options, type: type || 'choice' })) });
 });
 
 app.post('/api/subjects/:id/check', (req, res) => {
   const s = subjects[req.params.id];
   if (!s) return res.status(404).json({ error: 'Không tìm thấy đề.' });
-  const { questionId, selected } = req.body;
+  const { questionId, selected, fillAnswer } = req.body;
   const q = s.questions.find(x => x.id === questionId);
   if (!q) return res.status(404).json({ error: 'Không tìm thấy câu hỏi.' });
+
+  if (q.type === 'fill') {
+    const userAns = String(fillAnswer || '').trim().replace(',', '.');
+    const correctAns = String(q.answer).replace(',', '.');
+    const acceptList = (q.accept || [q.answer]).map(a => String(a).replace(',', '.'));
+    const isCorrect = acceptList.includes(userAns);
+    return res.json({ isCorrect, correct: q.answer, explain: isCorrect ? (q.explain || null) : null, type: 'fill' });
+  }
+
   const isCorrect = selected === q.answer;
   res.json({ isCorrect, correct: q.answer, explain: isCorrect ? (q.explain || null) : null });
 });
@@ -231,11 +240,22 @@ app.post('/api/subjects/:id/submit', requireStudentAuth, async (req, res) => {
   let score = 0, wrong = 0, skip = 0;
   const detailed = answers.map((ans, i) => {
     const q = s.questions[i];
-    const isCorrect = ans === q.answer;
-    if (ans === -1) skip++;
-    else if (!isCorrect) wrong++;
-    else score++;
-    return { question: q.question, options: q.options, selected: ans, correct: q.answer, isCorrect,
+    let isCorrect = false;
+    if (q.type === 'fill') {
+      const userAns = String(ans === -1 ? '' : ans).trim().replace(',', '.');
+      const acceptList = (q.accept || [q.answer]).map(a => String(a).replace(',', '.'));
+      isCorrect = userAns !== '' && acceptList.includes(userAns);
+      if (ans === -1 || ans === '') skip++;
+      else if (!isCorrect) wrong++;
+      else score++;
+    } else {
+      isCorrect = ans === q.answer;
+      if (ans === -1) skip++;
+      else if (!isCorrect) wrong++;
+      else score++;
+    }
+    return { question: q.question, options: q.options, type: q.type || 'choice',
+      selected: ans, correct: q.answer, isCorrect,
       explain: isCorrect ? (q.explain || null) : null };
   });
 

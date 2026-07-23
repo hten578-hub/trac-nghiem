@@ -171,23 +171,49 @@ function renderQuestion() {
 
   const container = document.getElementById('q-options');
   container.innerHTML = '';
-  q.options.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'qz-option' + (answers[current] === i ? ' selected' : '');
-    btn.innerHTML = `<span class="qz-opt-label">${LABELS[i]}</span><span class="qz-opt-text">${opt}</span>`;
 
+  if (q.type === 'fill') {
+    // Dạng điền đáp án
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'margin-top:8px;';
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.id = 'fill-input';
+    inp.placeholder = 'Nhập đáp án vào đây...';
+    inp.style.cssText = 'width:100%;max-width:300px;height:46px;padding:0 14px;border:1.5px solid #d9d9d9;border-radius:8px;font-size:1.1rem;outline:none;transition:border-color .2s;';
+    inp.value = (answers[current] !== -1 && answers[current] !== undefined) ? String(answers[current]) : '';
     if (isChecked) {
-      // Câu đã check: lock hoàn toàn
-      btn.classList.add('locked');
-      btn.setAttribute('disabled', 'true');
-      btn.setAttribute('onclick', 'return false');
-      btn.style.cssText += ';pointer-events:none!important;cursor:default!important;';
+      inp.disabled = true;
+      inp.style.background = '#f5f5f5';
+      inp.style.cursor = 'default';
     } else {
-      btn.addEventListener('click', () => selectOption(i));
+      inp.addEventListener('input', () => {
+        answers[current] = inp.value;
+        saveProgress();
+      });
+      inp.addEventListener('focus', () => inp.style.borderColor = '#1890ff');
+      inp.addEventListener('blur', () => inp.style.borderColor = '#d9d9d9');
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') checkAnswer(); });
     }
-
-    container.appendChild(btn);
-  });
+    wrap.appendChild(inp);
+    container.appendChild(wrap);
+  } else {
+    // Dạng trắc nghiệm
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'qz-option' + (answers[current] === i ? ' selected' : '');
+      btn.innerHTML = `<span class="qz-opt-label">${LABELS[i]}</span><span class="qz-opt-text">${opt}</span>`;
+      if (isChecked) {
+        btn.classList.add('locked');
+        btn.setAttribute('disabled', 'true');
+        btn.setAttribute('onclick', 'return false');
+        btn.style.cssText += ';pointer-events:none!important;cursor:default!important;';
+      } else {
+        btn.addEventListener('click', () => selectOption(i));
+      }
+      container.appendChild(btn);
+    });
+  }
 
   updateNumGrid();
   updateProgress();
@@ -343,28 +369,69 @@ function updateProgress() {
 // ===== CHECK =====
 async function checkAnswer() {
   const q = questions[current];
-  const selected = answers[current];
   const fb = document.getElementById('check-feedback');
+  const btn = document.getElementById('btn-check');
+  const token = localStorage.getItem('student_token') || '';
 
+  // ---- Câu điền đáp án ----
+  if (q.type === 'fill') {
+    const inp = document.getElementById('fill-input');
+    const fillVal = inp ? inp.value.trim() : '';
+    if (!fillVal) {
+      fb.innerHTML = `<div class="feedback-wrong"><div class="feedback-header"><span class="feedback-icon">⚠️</span> Bạn chưa nhập đáp án!</div></div>`;
+      return;
+    }
+    answers[current] = fillVal;
+    btn.disabled = true; btn.textContent = 'Đang kiểm tra...';
+    try {
+      const res = await fetch(`/api/subjects/${subjectId}/check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-student-token': token },
+        body: JSON.stringify({ questionId: q.id, fillAnswer: fillVal })
+      });
+      const data = await res.json();
+      if (inp) { inp.disabled = true; inp.style.background = '#f5f5f5'; inp.style.color = data.isCorrect ? '#52c41a' : '#ff4d4f'; }
+      if (data.isCorrect) {
+        fb.innerHTML = `<div class="feedback-correct"><div class="feedback-header"><span class="feedback-icon">✅</span> Chính xác!</div>${data.explain ? `<div class="feedback-explain">💡 ${data.explain}</div>` : ''}</div>`;
+        if (window.sfxSuccess) sfxSuccess();
+        if (window.burstEmojis) burstEmojis(['⭐','✨','🎉'], 5);
+      } else {
+        fb.innerHTML = `<div class="feedback-wrong"><div class="feedback-header"><span class="feedback-icon">❌</span> Chưa đúng! Đáp án đúng là: <strong>${data.correct}</strong></div></div>`;
+        if (window.playTone) playTone(300, 'sine', 0.3, 0.15);
+      }
+      btn.disabled = false;
+      btn.textContent = current < questions.length - 1 ? 'Câu tiếp theo →' : 'Xem kết quả';
+      btn.onclick = () => { if (current < questions.length - 1) nextQ(); else confirmSubmit(); };
+      checked[current] = true;
+      checkResults[current] = { isCorrect: data.isCorrect, correct: data.correct, explain: data.explain, selected: fillVal, type: 'fill' };
+      saveProgress();
+      if (window.MathJax?.typesetPromise) MathJax.typesetPromise([fb]).catch(() => {});
+    } catch (e) { btn.disabled = false; btn.textContent = 'Kiểm tra'; alert('Lỗi: ' + e.message); }
+    return;
+  }
+
+  // ---- Câu trắc nghiệm ----
+  const selected = answers[current];
   if (selected === -1) {
     fb.innerHTML = `<div class="feedback-wrong"><div class="feedback-header"><span class="feedback-icon">⚠️</span> Bạn chưa chọn đáp án!</div></div>`;
     return;
   }
 
-  const btn = document.getElementById('btn-check');
   btn.disabled = true;
   btn.textContent = 'Đang kiểm tra...';
 
   try {
     const res = await fetch(`/api/subjects/${subjectId}/check`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-student-token': token },
       body: JSON.stringify({ questionId: q.id, selected })
     });
     const data = await res.json();
 
     document.querySelectorAll('.qz-option').forEach((opt, i) => {
       opt.classList.add('locked');
+      opt.setAttribute('disabled', 'true');
+      opt.style.cssText += ';pointer-events:none!important;';
       if (data.isCorrect && i === data.correct) opt.classList.add('correct-ans');
       if (!data.isCorrect && i === selected) opt.classList.add('wrong-ans');
     });
@@ -385,17 +452,11 @@ async function checkAnswer() {
 
     btn.disabled = false;
     btn.textContent = current < questions.length - 1 ? 'Câu tiếp theo →' : 'Xem kết quả';
-    btn.onclick = () => {
-      if (current < questions.length - 1) nextQ();
-      else confirmSubmit();
-    };
+    btn.onclick = () => { if (current < questions.length - 1) nextQ(); else confirmSubmit(); };
 
     if (window.MathJax?.typesetPromise) MathJax.typesetPromise([fb]).catch(() => {});
-
-    // Đánh dấu câu này đã kiểm tra — không cho chọn lại
     checked[current] = true;
-    checkResults[current] = { isCorrect: data.isCorrect, correct: data.correct, explain: data.explain, selected: answers[current] };
-    console.log('checked array after:', [...checked]); // debug
+    checkResults[current] = { isCorrect: data.isCorrect, correct: data.correct, explain: data.explain, selected };
     saveProgress();
 
   } catch (e) {
