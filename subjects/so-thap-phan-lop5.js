@@ -9,7 +9,7 @@
 module.exports = {
   meta: {
     id: 'so-thap-phan-lop5',
-    title: 'Số Thập Phân',
+    title: 'Số Thập Phân 1',
     subtitle: 'Giới thiệu và cấu tạo số thập phân',
     icon: '🔢',
     timeLimit: 45,

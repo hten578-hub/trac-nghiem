@@ -1,7 +1,7 @@
 module.exports = {
   meta: {
     id: 'so-thap-phan-2-lop5',
-    title: 'Số Thập Phân (Bài 2)',
+    title: 'Số Thập Phân 2',
     subtitle: 'Tia số, đọc số, đổi đơn vị',
     icon: '🔢',
     timeLimit: 40,
