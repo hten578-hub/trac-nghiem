@@ -33,7 +33,7 @@ const ResultSchema = new mongoose.Schema({
   wrong: Number,
   skip: Number,
   attempt: Number,
-  answers: [Number],
+  answers: [mongoose.Schema.Types.Mixed], // Mixed để chứa cả số lẫn chuỗi (fill)
   submitted_at: { type: Date, default: Date.now }
 });
 
