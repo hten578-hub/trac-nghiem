@@ -3,126 +3,233 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chọn Môn Học</title>
+  <title>Hệ thống Trắc nghiệm</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-      background: linear-gradient(135deg, #e6f4ff 0%, #f0f5ff 100%);
-      min-height: 100vh;
+      background: #f0f5ff;
       color: #262626;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
-    .header {
+    /* ===== NAVBAR ===== */
+    .navbar {
       background: #fff;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
-      padding: 14px 32px;
+      box-shadow: 0 1px 6px rgba(0,0,0,.08);
+      padding: 0 32px;
+      height: 58px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
     }
-    .header-logo { font-weight: 700; font-size: 1rem; color: #1890ff; }
-    .header-link { font-size: .85rem; color: #8c8c8c; text-decoration: none; }
-    .header-link:hover { color: #1890ff; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.1rem; color: #1890ff; text-decoration: none; }
+    .nav-logo-icon { width: 34px; height: 34px; background: #1890ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .nav-user { display: flex; align-items: center; gap: 8px; background: #f0f5ff; border-radius: 20px; padding: 6px 14px 6px 8px; font-size: .85rem; font-weight: 600; color: #262626; }
+    .nav-user .av { width: 26px; height: 26px; background: #1890ff; border-radius: 50%; color: #fff; font-size: .72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .nav-btn { background: none; border: 1px solid #d9d9d9; border-radius: 6px; padding: 6px 12px; font-size: .82rem; color: #595959; cursor: pointer; text-decoration: none; transition: all .15s; }
+    .nav-btn:hover { border-color: #1890ff; color: #1890ff; }
+    .nav-btn.danger:hover { border-color: #ff4d4f; color: #ff4d4f; }
 
-    /* Container duy nhất căn giữa */
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 32px 24px 48px;
+    /* ===== HERO ===== */
+    .hero {
+      background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+      padding: 48px 32px 56px;
+      text-align: center;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
     }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 10px; position: relative; }
+    .hero p { font-size: 1rem; opacity: .88; margin-bottom: 28px; position: relative; }
+    .hero-stats { display: flex; justify-content: center; gap: 32px; position: relative; }
+    .hero-stat { text-align: center; }
+    .hero-stat .val { font-size: 1.6rem; font-weight: 800; display: block; }
+    .hero-stat .lbl { font-size: .78rem; opacity: .8; }
 
-    /* Hero */
-    .hero { text-align: center; margin-bottom: 20px; }
-    .hero-icon { font-size: 40px; display: block; margin-bottom: 10px; }
-    .hero h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; }
-    .hero p { color: #8c8c8c; font-size: .88rem; }
+    /* ===== MAIN CONTENT ===== */
+    .main { max-width: 960px; margin: 0 auto; padding: 32px 24px; flex: 1; width: 100%; }
 
-    /* Input — giới hạn 400px, căn giữa trong container */
-    .name-box { max-width: 400px; margin: 0 auto 24px; }
-    .name-box label { display: block; font-size: .88rem; font-weight: 600; color: #595959; margin-bottom: 7px; }
-    .name-box input {
-      width: 100%; height: 44px; padding: 0 14px;
+    /* Name input */
+    .name-section { background: #fff; border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 8px rgba(0,0,0,.07); margin-bottom: 24px; display: flex; align-items: center; gap: 14px; }
+    .name-section label { font-size: .88rem; font-weight: 700; color: #595959; white-space: nowrap; }
+    .name-section input {
+      flex: 1; height: 42px; padding: 0 14px;
       border: 1.5px solid #d9d9d9; border-radius: 8px;
-      font-size: .95rem; outline: none;
+      font-size: .95rem; outline: none; max-width: 360px;
       transition: border-color .2s, box-shadow .2s;
     }
-    .name-box input:focus { border-color: #1890ff; box-shadow: 0 0 0 3px rgba(24,144,255,.12); }
-    .name-error { color: #ff4d4f; font-size: .8rem; margin-top: 5px; display: none; }
+    .name-section input:focus { border-color: #1890ff; box-shadow: 0 0 0 3px rgba(24,144,255,.12); }
+    .name-error { color: #ff4d4f; font-size: .8rem; display: none; white-space: nowrap; }
     .name-error.show { display: block; }
 
-    /* Grid */
-    .grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      justify-content: center;
+    /* Search */
+    .search-section { margin-bottom: 20px; position: relative; }
+    .search-section input {
+      width: 100%; height: 44px; padding: 0 16px 0 44px;
+      border: 1.5px solid #d9d9d9; border-radius: 10px;
+      font-size: .95rem; background: #fff; outline: none;
+      transition: border-color .2s, box-shadow .2s;
     }
-    .card { width: 230px; flex-shrink: 0; }
+    .search-section input:focus { border-color: #1890ff; box-shadow: 0 0 0 3px rgba(24,144,255,.12); }
+    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1rem; color: #8c8c8c; pointer-events: none; }
 
-    /* Card */
-    .card {
+    /* Section title */
+    .section-title { font-size: .78rem; font-weight: 700; color: #8c8c8c; text-transform: uppercase; letter-spacing: .7px; margin-bottom: 14px; }
+
+    /* Groups */
+    .groups-wrap { display: flex; flex-direction: column; gap: 28px; }
+
+    .group-block { }
+    .group-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .group-icon-big { font-size: 24px; }
+    .group-name { font-size: 1.1rem; font-weight: 800; color: #262626; }
+    .group-sub { font-size: .82rem; color: #8c8c8c; margin-left: auto; }
+
+    /* Cards grid */
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+    .subject-card {
       background: #fff;
       border-radius: 14px;
-      box-shadow: 0 2px 12px rgba(0,0,0,.08);
       padding: 22px 20px;
-      text-align: center;
-      border: 2px solid transparent;
+      border: 1.5px solid transparent;
+      box-shadow: 0 2px 10px rgba(0,0,0,.07);
       cursor: pointer;
-      transition: all .2s;
+      transition: all .22s;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
     }
-    .card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(0,0,0,.12); border-color: #1890ff; }
-    .card-icon { font-size: 36px; display: block; margin-bottom: 10px; }
-    .card-title { font-size: 1rem; font-weight: 800; margin-bottom: 3px; }
-    .card-grade { font-size: .78rem; color: #8c8c8c; margin-bottom: 12px; }
-    .card-tags { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
-    .tag { background: #f5f5f5; color: #8c8c8c; border-radius: 20px; padding: 2px 9px; font-size: .75rem; font-weight: 600; }
-    .tag.blue { background: #e6f4ff; color: #1890ff; }
+    .subject-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 32px rgba(24,144,255,.18);
+      border-color: #1890ff;
+    }
+    .card-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+    .card-icon-wrap { width: 44px; height: 44px; border-radius: 10px; background: #e6f4ff; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .card-info { flex: 1; }
+    .card-title { font-size: .98rem; font-weight: 700; color: #262626; margin-bottom: 3px; }
+    .card-sub { font-size: .78rem; color: #8c8c8c; line-height: 1.4; }
+    .card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .ctag { border-radius: 20px; padding: 2px 9px; font-size: .73rem; font-weight: 600; background: #f5f5f5; color: #8c8c8c; }
+    .ctag.blue { background: #e6f4ff; color: #1890ff; }
+    .ctag.date { background: #f9f0ff; color: #722ed1; }
     .card-btn {
       width: 100%; height: 38px;
       background: #1890ff; color: #fff;
       border: none; border-radius: 8px;
       font-size: .88rem; font-weight: 700;
       cursor: pointer; transition: background .15s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
     }
     .card-btn:hover { background: #0c6dbd; }
-    .loading { text-align: center; color: #8c8c8c; padding: 32px; }
+
+    .loading { text-align: center; color: #8c8c8c; padding: 48px; grid-column: 1/-1; }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      background: #fff;
+      border-top: 1px solid #f0f0f0;
+      padding: 20px 32px;
+      text-align: center;
+      font-size: .8rem;
+      color: #8c8c8c;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .footer a { color: #8c8c8c; text-decoration: none; }
+    .footer a:hover { color: #1890ff; }
 
     @media (max-width: 600px) {
-      .header { padding: 12px 16px; }
-      .container { padding: 24px 16px 40px; }
-      .hero h1 { font-size: 1.3rem; }
-      .name-box { max-width: 100%; }
+      .navbar { padding: 0 14px; }
+      .hero { padding: 32px 16px 40px; }
+      .hero h1 { font-size: 1.5rem; }
+      .hero-stats { gap: 20px; }
+      .main { padding: 20px 14px; }
+      .name-section { flex-wrap: wrap; }
+      .name-section input { max-width: 100%; }
+      .footer { justify-content: center; }
     }
   </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="header-logo">🎓 Hệ thống Trắc nghiệm</div>
-  <div style="display:flex;align-items:center;gap:12px;">
-    <span id="header-student" style="font-size:.85rem;color:#595959;font-weight:600;"></span>
-    <button id="btn-history" onclick="showHistory()" style="display:none;background:#e6f4ff;color:#1890ff;border:none;border-radius:6px;padding:6px 12px;font-size:.82rem;font-weight:600;cursor:pointer;">📋 Lịch sử</button>
-    <button id="btn-logout" onclick="doLogout()" style="display:none;background:none;border:1px solid #d9d9d9;border-radius:6px;padding:6px 12px;font-size:.82rem;color:#8c8c8c;cursor:pointer;">Đăng xuất</button>
-    <a href="teacher.html" class="header-link">🔑 Giáo viên</a>
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-icon">🎓</div>
+    Trắc Nghiệm
+  </a>
+  <div class="nav-right">
+    <div class="nav-user" id="nav-user" style="display:none;">
+      <div class="av" id="nav-av">A</div>
+      <span id="nav-name">Học sinh</span>
+    </div>
+    <button id="btn-history" onclick="showHistory()" class="nav-btn" style="display:none;">📋 Lịch sử</button>
+    <button id="btn-logout" onclick="doLogout()" class="nav-btn danger" style="display:none;">Đăng xuất</button>
+    <a href="teacher.html" class="nav-btn">🔑 Giáo viên</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>📚 Hệ thống Trắc Nghiệm</h1>
+  <p>Luyện tập thông minh — Kiểm tra nhanh — Xem kết quả tức thì</p>
+  <div class="hero-stats" id="hero-stats">
+    <div class="hero-stat"><span class="val" id="stat-subjects">–</span><span class="lbl">Bài học</span></div>
+    <div class="hero-stat"><span class="val" id="stat-questions">–</span><span class="lbl">Câu hỏi</span></div>
+    <div class="hero-stat"><span class="val" id="stat-subjects-count">–</span><span class="lbl">Môn học</span></div>
   </div>
 </div>
 
-<div class="container">
+<!-- MAIN -->
+<div class="main">
 
-  <div class="hero">
-    <span class="hero-icon">📝</span>
-    <h1>Chọn Môn Học</h1>
-    <p>Chọn môn để xem danh sách bài</p>
+  <!-- Nhập tên -->
+  <div class="name-section" id="name-section">
+    <label for="sname">👤 Họ và tên:</label>
+    <input type="text" id="sname" placeholder="Nhập họ tên của bạn..."/>
+    <span class="name-error" id="name-err">Vui lòng nhập họ tên!</span>
   </div>
 
-  <div class="grid" id="grid">
+  <!-- Search -->
+  <div class="search-section">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search-inp" placeholder="Tìm kiếm bài học..." oninput="filterCards()"/>
+  </div>
+
+  <div class="section-title">DANH SÁCH BÀI HỌC</div>
+
+  <div class="groups-wrap" id="groups-wrap">
     <div class="loading">⏳ Đang tải...</div>
   </div>
 
 </div>
 
-<!-- Modal lịch sử -->
+<!-- FOOTER -->
+<footer class="footer">
+  <span>© 2026 Hệ thống Trắc Nghiệm</span>
+  <span>
+    <a href="teacher.html">🔑 Trang giáo viên</a>
+    &nbsp;·&nbsp;
+    <a href="student-login.html">👤 Đăng nhập học sinh</a>
+  </span>
+</footer>
+
+<!-- MODAL LỊCH SỬ -->
 <div id="history-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:20px;">
   <div style="background:#fff;border-radius:14px;width:100%;max-width:520px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.18);">
     <div style="display:flex;align-items:center;padding:18px 20px;border-bottom:1px solid #f0f0f0;">
@@ -134,36 +241,35 @@
 </div>
 
 <script>
-// ===== KIỂM TRA ĐĂNG NHẬP =====
 let studentToken = localStorage.getItem('student_token');
 let studentFullname = localStorage.getItem('student_fullname') || '';
-let studentUsername = localStorage.getItem('student_username') || '';
+let allGroups = [];
 
+// ===== AUTH CHECK =====
 async function checkAuth() {
   if (!studentToken) { location.href = 'student-login.html'; return; }
-  const res = await fetch('/api/student-auth-check', { headers: { 'x-student-token': studentToken } });
-  const data = await res.json();
-  if (!data.ok) {
-    localStorage.removeItem('student_token');
-    localStorage.removeItem('student_username');
-    localStorage.removeItem('student_fullname');
-    location.href = 'student-login.html';
-    return;
-  }
-  studentFullname = data.fullname;
-  studentUsername = data.username;
-  localStorage.setItem('student_fullname', data.fullname);
-  document.getElementById('header-student').textContent = '👤 ' + data.fullname;
-  document.getElementById('btn-logout').style.display = 'block';
-  document.getElementById('btn-history').style.display = 'block';
-  load();
+  try {
+    const res = await fetch('/api/student-auth-check', { headers: { 'x-student-token': studentToken } });
+    const data = await res.json();
+    if (!data.ok) { localStorage.clear(); location.href = 'student-login.html'; return; }
+    studentFullname = data.fullname;
+    localStorage.setItem('student_fullname', data.fullname);
+
+    // Update navbar
+    document.getElementById('nav-user').style.display = 'flex';
+    document.getElementById('nav-av').textContent = data.fullname.trim().split(' ').pop()[0].toUpperCase();
+    document.getElementById('nav-name').textContent = data.fullname;
+    document.getElementById('btn-logout').style.display = 'block';
+    document.getElementById('btn-history').style.display = 'block';
+
+    // Ẩn name section vì đã đăng nhập
+    document.getElementById('name-section').style.display = 'none';
+  } catch { location.href = 'student-login.html'; }
 }
 
 function doLogout() {
   fetch('/api/student-logout', { method: 'POST', headers: { 'x-student-token': studentToken } });
-  localStorage.removeItem('student_token');
-  localStorage.removeItem('student_username');
-  localStorage.removeItem('student_fullname');
+  localStorage.clear();
   location.href = 'student-login.html';
 }
 
@@ -171,45 +277,90 @@ function doLogout() {
 async function load() {
   try {
     const res = await fetch('/api/groups');
-    const groups = await res.json();
-    const grid = document.getElementById('grid');
-    if (!groups.length) { grid.innerHTML = '<div class="loading">Chưa có môn nào.</div>'; return; }
-    grid.innerHTML = groups.map(g => `
-      <div class="card" onclick="go('${g.id}')">
-        <span class="card-icon">${g.icon}</span>
-        <div class="card-title">${g.title}</div>
-        <div class="card-grade">${g.grade}</div>
-        <div class="card-tags">
-          <span class="tag blue">${g.lessons.length} bài</span>
-          <span class="tag">${g.subject}</span>
-        </div>
-        <button class="card-btn">Xem danh sách bài →</button>
-      </div>
-    `).join('');
+    allGroups = await res.json();
+
+    // Stats
+    const totalLessons = allGroups.reduce((s,g) => s + g.lessons.length, 0);
+    const totalQ = allGroups.reduce((s,g) => s + g.lessons.reduce((ss,l) => ss + l.totalQuestions, 0), 0);
+    document.getElementById('stat-subjects').textContent = totalLessons;
+    document.getElementById('stat-questions').textContent = totalQ + '+';
+    document.getElementById('stat-subjects-count').textContent = allGroups.length;
+
+    renderGroups(allGroups);
   } catch {
-    document.getElementById('grid').innerHTML = '<div class="loading">❌ Không thể kết nối server</div>';
+    document.getElementById('groups-wrap').innerHTML = '<div class="loading">❌ Không thể kết nối server</div>';
   }
 }
 
+function renderGroups(groups) {
+  const wrap = document.getElementById('groups-wrap');
+  if (!groups.length || groups.every(g => g.lessons.length === 0)) {
+    wrap.innerHTML = '<div class="loading">Không tìm thấy bài học nào.</div>';
+    return;
+  }
+  wrap.innerHTML = groups.filter(g => g.lessons.length > 0).map(g => `
+    <div class="group-block">
+      <div class="group-header">
+        <span class="group-icon-big">${g.icon}</span>
+        <span class="group-name">${g.title}</span>
+        <span class="group-sub">${g.grade} · ${g.lessons.length} bài</span>
+      </div>
+      <div class="cards-grid">
+        ${g.lessons.map(lesson => {
+          const dateStr = lesson.createdAt
+            ? new Date(lesson.createdAt).toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' })
+            : '';
+          return `
+          <div class="subject-card" onclick="go('${g.id}')">
+            <div class="card-top">
+              <div class="card-icon-wrap">${lesson.icon || g.icon}</div>
+              <div class="card-info">
+                <div class="card-title">${lesson.title}</div>
+                <div class="card-sub">${lesson.subtitle || ''}</div>
+              </div>
+            </div>
+            <div class="card-tags">
+              <span class="ctag blue">📝 ${lesson.totalQuestions} câu</span>
+              <span class="ctag">⏱ ${lesson.timeLimit} phút</span>
+              ${dateStr ? `<span class="ctag date">📅 ${dateStr}</span>` : ''}
+            </div>
+            <button class="card-btn">📖 Vào làm bài →</button>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== SEARCH =====
+function filterCards() {
+  const q = document.getElementById('search-inp').value.trim().toLowerCase();
+  if (!q) { renderGroups(allGroups); return; }
+  const filtered = allGroups.map(g => ({
+    ...g,
+    lessons: g.lessons.filter(l =>
+      l.title.toLowerCase().includes(q) || (l.subtitle || '').toLowerCase().includes(q)
+    )
+  }));
+  renderGroups(filtered);
+}
+
+// ===== NAVIGATE =====
 function go(groupId) {
   sessionStorage.setItem('student_name', studentFullname);
   location.href = `lessons.html?group=${groupId}`;
 }
 
-// ===== LỊCH SỬ LÀM BÀI =====
+// ===== HISTORY =====
 async function showHistory() {
   const modal = document.getElementById('history-modal');
   const body = document.getElementById('history-body');
   modal.style.display = 'flex';
   body.innerHTML = '<div style="text-align:center;padding:32px;color:#8c8c8c;">⏳ Đang tải...</div>';
-
   try {
     const res = await fetch('/api/student/history', { headers: { 'x-student-token': studentToken } });
     const history = await res.json();
-    if (!history.length) {
-      body.innerHTML = '<div style="text-align:center;padding:32px;color:#8c8c8c;">Bạn chưa làm bài nào.</div>';
-      return;
-    }
+    if (!history.length) { body.innerHTML = '<div style="text-align:center;padding:32px;color:#8c8c8c;">Bạn chưa làm bài nào.</div>'; return; }
     body.innerHTML = history.map(h => {
       const pct = Math.round(h.score / h.total * 100);
       const score10 = (Math.round(h.score / h.total * 100) / 10).toFixed(1);
@@ -219,33 +370,31 @@ async function showHistory() {
       const skip = h.skip ?? 0;
       return `<div style="padding:14px 16px;border-bottom:1px solid #f0f0f0;">
         <div style="display:flex;align-items:center;gap:12px;">
-          <div style="font-size:26px;width:36px;text-align:center;flex-shrink:0;">${h.subject_title?.includes('Toán') ? '📐' : '📖'}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:700;font-size:.92rem;color:#262626;">${h.subject_title}</div>
+          <div style="font-size:26px;flex-shrink:0;">📝</div>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:.92rem;">${h.subject_title}</div>
             <div style="font-size:.75rem;color:#8c8c8c;margin-top:2px;">${date}${h.attempt ? ` · Lần ${h.attempt}` : ''}</div>
           </div>
-          <div style="text-align:right;flex-shrink:0;">
+          <div style="text-align:right;">
             <div style="font-size:1.3rem;font-weight:800;color:${cls};">${score10}<span style="font-size:.75rem;font-weight:400;color:#8c8c8c;">/10</span></div>
             <div style="font-size:.72rem;color:#8c8c8c;">${h.score}/${h.total} câu</div>
           </div>
         </div>
-        <div style="display:flex;gap:10px;margin-top:8px;padding-left:48px;">
+        <div style="display:flex;gap:8px;margin-top:8px;padding-left:38px;">
           <span style="background:#f6ffed;color:#52c41a;border-radius:20px;padding:2px 9px;font-size:.75rem;font-weight:600;">✓ ${h.score} đúng</span>
           <span style="background:#fff2f0;color:#ff4d4f;border-radius:20px;padding:2px 9px;font-size:.75rem;font-weight:600;">✗ ${wrong} sai</span>
           ${skip > 0 ? `<span style="background:#f5f5f5;color:#8c8c8c;border-radius:20px;padding:2px 9px;font-size:.75rem;font-weight:600;">— ${skip} bỏ qua</span>` : ''}
         </div>
       </div>`;
     }).join('');
-  } catch {
-    body.innerHTML = '<div style="text-align:center;padding:32px;color:#ff4d4f;">Lỗi kết nối.</div>';
-  }
+  } catch { body.innerHTML = '<div style="text-align:center;padding:32px;color:#ff4d4f;">Lỗi kết nối.</div>'; }
 }
+function closeHistory() { document.getElementById('history-modal').style.display = 'none'; }
 
-function closeHistory() {
-  document.getElementById('history-modal').style.display = 'none';
-}
-
-document.addEventListener('DOMContentLoaded', checkAuth);
+document.addEventListener('DOMContentLoaded', () => {
+  checkAuth().then(() => load());
+  document.getElementById('sname')?.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('sname').blur(); });
+});
 </script>
 </body>
 </html>
