@@ -4,16 +4,49 @@ Web trắc nghiệm cho học sinh, có đăng nhập, giới hạn lượt làm
 
 ---
 
-## 🚀 Khởi động (local)
+## 🚀 Cách chạy web (lần đầu)
 
+**Bước 1 — Cài Node.js** (nếu chưa có)
+Tải tại: https://nodejs.org → chọn bản **LTS** → cài đặt bình thường.
+
+**Bước 2 — Cài thư viện**
+Mở terminal trong thư mục project (VS Code: nhấn **Ctrl + `**), gõ:
 ```
 npm install
+```
+Chờ xong (chỉ cần làm 1 lần).
+
+**Bước 3 — Chạy server**
+```
 node server.js
 ```
-
-Nếu `node` chưa có trong PATH:
+Hoặc:
 ```
-"C:\Program Files\nodejs\node.exe" server.js
+npm start
+```
+
+Khi thấy dòng này là thành công:
+```
+✅ Server đã khởi động!
+🌐 http://localhost:3000
+```
+
+**Bước 4 — Mở trình duyệt**
+
+| Địa chỉ | Dành cho |
+|---------|---------|
+| http://localhost:3000/student-login.html | 👤 Học sinh đăng nhập |
+| http://localhost:3000/teacher.html | 🔑 Giáo viên quản lý |
+
+> 💡 Muốn dừng server: nhấn **Ctrl + C** trong terminal.
+
+---
+
+### Lần sau chạy lại (đã cài rồi)
+
+Chỉ cần mở terminal trong thư mục project rồi gõ:
+```
+node server.js
 ```
 
 ---

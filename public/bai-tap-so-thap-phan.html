@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<title>Khái Niệm Số Thập Phân</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Be Vietnam Pro','Segoe UI',Arial,sans-serif;font-size:13pt;color:#111;background:#dde4ee}
+
+.page{width:210mm;min-height:297mm;margin:16px auto;padding:14mm 16mm 18mm;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.15)}
+
+/* HEADER */
+.dh{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:14px;gap:16px}
+.dh h1{font-size:18pt;font-weight:800;color:#111;line-height:1.15}
+.dh p{font-size:10pt;color:#444;margin-top:3px}
+.info{font-size:11pt;line-height:2.3;text-align:right}
+.ul{display:inline-block;border-bottom:1.2px solid #333}
+
+/* BÀI */
+.bt{color:#111;font-weight:800;font-size:13pt;margin:16px 0 10px;display:block}
+
+/* CÂU */
+.cau{margin-bottom:18px}
+.cau-title{font-weight:700;font-size:13pt;margin-bottom:8px}
+
+/* NOTE */
+.note{font-size:11pt;color:#222;margin-bottom:10px;padding:6px 12px;border-left:3px solid #555}
+
+/* TIA SỐ */
+.tia{margin:8px 0 12px}
+.tia-top{display:grid;grid-template-columns:32px repeat(9,1fr) 32px;text-align:center;font-size:10pt;color:#444;margin-bottom:1px}
+.fr{line-height:1.2}
+.fr .fn{display:block}
+.fr .fd{display:block;border-top:1px solid #555;padding-top:1px}
+.tia-ruler{border-top:2px solid #222;position:relative;margin:2px 0}
+.tia-ruler::after{content:'▶';position:absolute;right:-1px;top:-10px;font-size:8pt}
+.tia-bot{display:grid;grid-template-columns:32px repeat(9,1fr) 32px;text-align:center;font-size:12pt;margin-top:6px}
+/* Ô trống tia số: đường gạch dưới thay ô vuông */
+.tb{border-bottom:1.5px solid #333;height:24px;margin:0 6px;display:block}
+
+/* FILL LINE */
+.fl{display:flex;align-items:baseline;gap:8px;margin:8px 0 8px 6px;font-size:13pt}
+.fline{border-bottom:1.4px solid #333;flex:1;min-height:20px}
+
+/* PHÂN SỐ */
+.pf{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:11pt;line-height:1.2;margin:0 3px}
+.pf .pn{border-bottom:1.2px solid #333;padding:0 4px;display:block}
+.pf .pd{padding:0 4px;display:block}
+
+/* BẢNG */
+table{width:100%;border-collapse:collapse;margin:7px 0 10px;font-size:12pt}
+th{background:#fff;color:#111;padding:8px 11px;text-align:center;font-weight:700;border:1.5px solid #555}
+td{padding:10px 11px;border:1px solid #999;vertical-align:middle}
+tr:nth-child(even) td{background:#fff}
+.tdb{background:#fff !important}
+.ans{display:block;border-bottom:1.2px solid #555;min-height:20px;width:100%;margin-top:4px}
+
+/* So sánh — đường kẻ thay ô vuông */
+.cmp-row{display:flex;flex-wrap:wrap;gap:18px 48px;margin:8px 0 8px 8px}
+.cmp-item{display:flex;align-items:center;gap:6px;font-size:13pt}
+.cmp-blank{display:inline-block;border-bottom:1.5px solid #333;width:44px;text-align:center;padding-bottom:2px}
+
+/* Câu 4 phân số */
+.c4-row{display:flex;align-items:center;justify-content:center;gap:6px;font-size:13pt}
+
+/* FOOTER */
+.foot{margin-top:18px;padding-top:12px;border-top:1.5px solid #999;display:flex;justify-content:space-between;align-items:center}
+.score{border:1.5px solid #555;padding:8px 20px;text-align:center;min-width:76px}
+.score .sl{font-size:9pt;color:#555}
+.score .sv{font-size:22pt;font-weight:800;color:#111;display:block;min-height:30px}
+
+/* IN A4 */
+@page{size:A4;margin:0}
+@media print{
+  body{background:#fff}
+  .page{margin:0;box-shadow:none;width:210mm;padding:12mm 15mm 15mm}
+  .pbtn{display:none!important}
+  /* Ép in màu nền */
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+}
+.pbtn{position:fixed;bottom:20px;right:20px;background:#1890ff;color:#fff;border:none;border-radius:50px;padding:10px 22px;font-size:.95rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(24,144,255,.4);z-index:999}
+.pbtn:hover{background:#0c6dbd}
+</style>
+</head>
+<body>
+<button class="pbtn" onclick="window.print()">🖨️ In / Lưu PDF</button>
+<div class="page">
+
+<!-- HEADER -->
+<div class="dh">
+  <div>
+    <h1>KHÁI NIỆM SỐ THẬP PHÂN</h1>
+    <p>Toán Lớp 5 &mdash; Bài tập thực hành</p>
+  </div>
+  <div class="info">
+    Họ tên: <span class="ul" style="width:170px">&nbsp;</span><br>
+    Lớp: <span class="ul" style="width:56px">&nbsp;</span>
+    &nbsp; Ngày: <span class="ul" style="width:88px">&nbsp;</span>
+  </div>
+</div>
+
+<!-- ===== BÀI 1 ===== -->
+<div class="bt">BÀI 1 &mdash; Tia số &middot; Đọc số &middot; Đổi đơn vị</div>
+
+<!-- C1a -->
+<div class="cau">
+  <div class="cau-title">Câu 1a. Viết số thập phân thích hợp vào mỗi ô trống trên tia số:</div>
+  <div class="tia">
+    <div class="tia-top">
+      <div></div>
+      <div class="fr"><span class="fn">1</span><span class="fd">10</span></div>
+      <div class="fr"><span class="fn">2</span><span class="fd">10</span></div>
+      <div class="fr"><span class="fn">3</span><span class="fd">10</span></div>
+      <div class="fr"><span class="fn">4</span><span class="fd">10</span></div>
+      <div class="fr"><span class="fn">5</span><span class="fd">10</span></div>
+      <div class="fr"><span class="fn">6</span><span class="fd">10</span></div>
+      <div class="fr"><span class="fn">7</span><span class="fd">10</span></div>
+      <div class="fr"><span class="fn">8</span><span class="fd">10</span></div>
+      <div class="fr"><span class="fn">9</span><span class="fd">10</span></div>
+      <div></div>
+    </div>
+    <div class="tia-ruler"></div>
+    <div class="tia-bot">
+      <div>0</div>
+      <div>0,1</div><div>0,2</div><div>0,3</div>
+      <div><div class="tb"></div></div>
+      <div><div class="tb"></div></div>
+      <div><div class="tb"></div></div>
+      <div><div class="tb"></div></div>
+      <div>0,8</div><div>0,9</div><div>1</div>
+    </div>
+  </div>
+
+  <!-- C1b -->
+  <div class="cau-title" style="margin-top:10px">Câu 1b. Đọc các số thập phân theo mẫu:</div>
+  <div class="note"><b>Mẫu:</b> &nbsp;0,4 đọc là: <em>không phẩy bốn</em> &emsp; 0,04 đọc là: <em>không phẩy không bốn</em></div>
+  <table>
+    <thead><tr><th style="width:18%">Số</th><th>Đọc là</th></tr></thead>
+    <tbody>
+      <tr><td style="text-align:center;font-weight:700">0,5</td><td class="tdb"><span class="ans"></span></td></tr>
+      <tr><td style="text-align:center;font-weight:700">0,04</td><td class="tdb"><span class="ans"></span></td></tr>
+      <tr><td style="text-align:center;font-weight:700">0,05</td><td class="tdb"><span class="ans"></span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- C2 -->
+<div class="cau">
+  <div class="cau-title">Câu 2. Điền số thập phân thích hợp vào ô trống:</div>
+  <div class="note">
+    <b>Mẫu:</b> &nbsp;
+    1 g = <span class="pf"><span class="pn">1</span><span class="pd">1000</span></span> kg = <b>0,001</b> kg
+    &emsp;&emsp;
+    148 ml = <span class="pf"><span class="pn">148</span><span class="pd">1000</span></span> l = <b>0,148</b> l
+  </div>
+  <b style="display:block;margin-bottom:5px">a)</b>
+  <table>
+    <thead><tr><th style="width:58%">Phép đổi</th><th>Kết quả</th></tr></thead>
+    <tbody>
+      <tr><td>1 kg = <span class="ul" style="width:80px;display:inline-block">&nbsp;</span> tấn</td><td class="tdb"><span class="ans"></span></td></tr>
+      <tr><td>564 m = <span class="ul" style="width:80px;display:inline-block">&nbsp;</span> km</td><td class="tdb"><span class="ans"></span></td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <b>Mẫu:</b> 2,3 km = 2<span class="pf"><span class="pn">3</span><span class="pd">10</span></span> km = 2 km 300 m = <b>2 300 m</b>
+  </div>
+  <b style="display:block;margin:7px 0 5px">b)</b>
+  <table>
+    <thead><tr><th style="width:58%">Phép đổi</th><th>Kết quả</th></tr></thead>
+    <tbody>
+      <tr><td>3,2 m = <span class="ul" style="width:80px;display:inline-block">&nbsp;</span> mm</td><td class="tdb"><span class="ans"></span></td></tr>
+      <tr><td>4,5 kg = <span class="ul" style="width:80px;display:inline-block">&nbsp;</span> g</td><td class="tdb"><span class="ans"></span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ===== BÀI 2 ===== -->
+<div class="bt">BÀI 2 &mdash; Cấu tạo &middot; Viết &middot; Đọc &middot; Chuyển đổi</div>
+
+<!-- C1 -->
+<div class="cau">
+  <div class="cau-title">Câu 1. Điền vào bảng:</div>
+  <table>
+    <thead><tr><th style="width:44%">Số thập phân gồm</th><th style="width:18%">Viết số</th><th>Đọc số</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>3 chục, 5 đơn vị, 6 phần mười, 2 phần trăm, 4 phần nghìn</td>
+        <td style="text-align:center;font-weight:700">35,624</td>
+        <td>ba mươi lăm phẩy sáu trăm hai mươi tư</td>
+      </tr>
+      <tr><td>116 đơn vị, 7 phần mười, 1 phần trăm, 5 phần nghìn</td><td class="tdb"><span class="ans"></span></td><td class="tdb"><span class="ans"></span></td></tr>
+      <tr><td>0 đơn vị, 7 phần mười, 3 phần trăm</td><td class="tdb"><span class="ans"></span></td><td class="tdb"><span class="ans"></span></td></tr>
+      <tr><td>26 đơn vị và 408 phần nghìn</td><td class="tdb"><span class="ans"></span></td><td class="tdb"><span class="ans"></span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- C2 -->
+<div class="cau">
+  <div class="cau-title">Câu 2a. Nêu phần nguyên, phần thập phân rồi đọc số:</div>
+  <table>
+    <thead><tr><th style="width:17%">Số</th><th style="width:18%">Phần nguyên</th><th style="width:20%">Phần thập phân</th><th>Đọc số</th></tr></thead>
+    <tbody>
+      <tr><td style="text-align:center;font-weight:700">327,106</td><td class="tdb"><span class="ans"></span></td><td class="tdb"><span class="ans"></span></td><td class="tdb"><span class="ans"></span></td></tr>
+      <tr><td style="text-align:center;font-weight:700">49,251</td><td class="tdb"><span class="ans"></span></td><td class="tdb"><span class="ans"></span></td><td class="tdb"><span class="ans"></span></td></tr>
+      <tr><td style="text-align:center;font-weight:700">9,362</td><td class="tdb"><span class="ans"></span></td><td class="tdb"><span class="ans"></span></td><td class="tdb"><span class="ans"></span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="cau-title" style="margin-top:10px">Câu 2b. Đọc các số thập phân theo mẫu:</div>
+  <div class="note"><b>Mẫu:</b> &nbsp;4,05 đọc là: <em>Bốn phẩy không năm</em> &emsp; 12,004 đọc là: <em>Mười hai phẩy không không bốn</em></div>
+  <table>
+    <thead><tr><th style="width:18%">Số</th><th>Đọc là</th></tr></thead>
+    <tbody>
+      <tr><td style="text-align:center;font-weight:700">8,03</td><td class="tdb"><span class="ans"></span></td></tr>
+      <tr><td style="text-align:center;font-weight:700">25,009</td><td class="tdb"><span class="ans"></span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- C3 -->
+<div class="cau">
+  <div class="cau-title">Câu 3. Nối số thập phân với cách đọc thích hợp:</div>
+  <table>
+    <thead><tr><th style="width:22%">Số thập phân</th><th style="width:8%"></th><th>Cách đọc</th></tr></thead>
+    <tbody>
+      <tr><td style="text-align:center;font-weight:700">415,2</td><td style="text-align:center">&#8596;</td><td>Bốn trăm mười lăm phẩy hai</td></tr>
+      <tr><td style="text-align:center;font-weight:700">71,84</td><td style="text-align:center">&#8596;</td><td>Bảy mươi mốt phẩy tám mươi tư</td></tr>
+      <tr><td style="text-align:center;font-weight:700">0,935</td><td style="text-align:center">&#8596;</td><td>Không phẩy chín trăm ba mươi lăm</td></tr>
+      <tr><td style="text-align:center;font-weight:700">3,1416</td><td style="text-align:center">&#8596;</td><td>Ba phẩy một nghìn bốn trăm mười sáu</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- C4 -->
+<div class="cau">
+  <div class="cau-title">Câu 4. Chuyển phân số thành phân số thập phân:</div>
+  <table>
+    <thead><tr><th style="width:28%">Phân số</th><th>Phân số thập phân</th></tr></thead>
+    <tbody>
+      <tr>
+        <td style="text-align:center"><span class="pf" style="font-size:13pt"><span class="pn" style="padding:0 10px">7</span><span class="pd" style="padding:0 10px">20</span></span></td>
+        <td style="text-align:center"><span class="pf" style="font-size:13pt"><span class="pn"><span class="ul" style="width:60px;display:inline-block">&nbsp;</span></span><span class="pd" style="padding:0 14px">100</span></span></td>
+      </tr>
+      <tr>
+        <td style="text-align:center"><span class="pf" style="font-size:13pt"><span class="pn" style="padding:0 8px">12</span><span class="pd" style="padding:0 8px">25</span></span></td>
+        <td style="text-align:center"><span class="pf" style="font-size:13pt"><span class="pn"><span class="ul" style="width:60px;display:inline-block">&nbsp;</span></span><span class="pd" style="padding:0 14px">100</span></span></td>
+      </tr>
+      <tr>
+        <td style="text-align:center"><span class="pf" style="font-size:13pt"><span class="pn" style="padding:0 10px">4</span><span class="pd" style="padding:0 6px">125</span></span></td>
+        <td style="text-align:center"><span class="pf" style="font-size:13pt"><span class="pn" style="padding:0 18px">32</span><span class="pd"><span class="ul" style="width:68px;display:inline-block">&nbsp;</span></span></span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- C5 -->
+<div class="cau">
+  <div class="cau-title">Câu 5. Viết số thập phân thích hợp:</div>
+  <table>
+    <thead><tr><th style="width:62%">Cách đọc</th><th>Viết số</th></tr></thead>
+    <tbody>
+      <tr><td>Bảy đơn vị, ba phần mười</td><td class="tdb"><span class="ans"></span></td></tr>
+      <tr><td>Mười hai đơn vị, không phần mười, năm phần trăm</td><td class="tdb"><span class="ans"></span></td></tr>
+      <tr><td>Không đơn vị, tám phần mười, hai phần trăm</td><td class="tdb"><span class="ans"></span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- C6 -->
+<div class="cau">
+  <div class="cau-title">Câu 6. Điền dấu &gt;, &lt;, = thích hợp vào ô trống:</div>
+  <div class="cmp-row">
+    <div class="cmp-item">0,8 &nbsp;<span class="cmp-blank"></span>&nbsp; 0,80</div>
+    <div class="cmp-item">5,07 &nbsp;<span class="cmp-blank"></span>&nbsp; 5,7</div>
+    <div class="cmp-item">3,25 &nbsp;<span class="cmp-blank"></span>&nbsp; 3,205</div>
+    <div class="cmp-item">0,405 &nbsp;<span class="cmp-blank"></span>&nbsp; 0,45</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="foot">
+  <div style="font-size:10.5pt"><b>Nhận xét:</b> <span class="ul" style="width:270px">&nbsp;</span></div>
+  <div class="score"><div class="sl">ĐIỂM</div><span class="sv">&nbsp;</span></div>
+</div>
+
+</div>
+</body>
+</html>
